@@ -1,0 +1,52 @@
+services:
+  database:
+    image: mariadb:11.8.8
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: tonalizador
+      MARIADB_USER: tonalizador
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --max-connections=50
+      - --performance-schema=OFF
+    volumes:
+      - tonalizador_db:/var/lib/mysql
+      - ./db/migrations/0001_precision_cache.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u root -p$$MARIADB_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    mem_limit: 384m
+    networks:
+      - private
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://tonalizador:${DB_PASSWORD}@database:3306/tonalizador
+      SPOTIFY_MARKET: ES
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3010:3000"
+    mem_limit: 512m
+    networks:
+      - private
+
+volumes:
+  tonalizador_db:
+
+networks:
+  private:
+    driver: bridge
