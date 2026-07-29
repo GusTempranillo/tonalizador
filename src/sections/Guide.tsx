@@ -44,11 +44,11 @@ const HELP: Record<Chapter, ChapterHelp> = {
       "Pulsa «Elegir el archivo CSV de mi playlist» y busca en tu dispositivo el archivo terminado en .csv que guardaste con TuneMyMusic.",
       "Comprueba el nombre del archivo y el número de canciones encontradas. Si no es la playlist correcta, puedes elegir otro archivo antes de continuar.",
       "Pulsa «Analizar mis canciones». Puedes dejar que termine; el progreso se guarda automáticamente en este navegador.",
-      "Cuando acabe, revisa la tonalidad mostrada junto a cada canción. También indicamos de dónde procede el dato y si necesita tu atención.",
+      "Cuando acabe, revisa la tonalidad mostrada junto a cada canción. Spotify identifica la canción y ReccoBeats proporciona la tonalidad y los BPM.",
       "Si una canción queda sin tonalidad o el resultado no es suficientemente fiable, no la colocamos automáticamente en una lista incorrecta. Puedes corregirla manualmente o analizar un archivo de audio que tengas en tu dispositivo.",
     ],
     reason:
-      "La herramienta lee los títulos y artistas del CSV, busca cada grabación en servicios de información musical e intenta obtener una tonalidad fiable. Después agrupa las canciones que tienen un resultado claro y separa las dudosas para que puedas revisarlas. Si eliges analizar un archivo de audio, ese análisis se realiza solamente en tu navegador.",
+      "La herramienta lee los títulos y artistas del CSV. Spotify identifica cada canción y ayuda a confirmar que se trata de la grabación correcta; después, ReccoBeats proporciona la tonalidad y los BPM. En los resultados lo resumimos así: «Spotify identificó la canción. Tonalidad obtenida de ReccoBeats». A continuación agrupamos las canciones que tienen un resultado claro y separamos las dudosas para que puedas revisarlas. Si eliges analizar un archivo de audio, ese análisis se realiza solamente en tu navegador.",
     analogy:
       "Es parecido a clasificar documentos: los que están claramente identificados se guardan en su carpeta y los que ofrecen dudas se dejan aparte para revisarlos. Los archivos de audio opcionales no se suben ni se conservan.",
   },

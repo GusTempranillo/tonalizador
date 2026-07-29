@@ -142,10 +142,10 @@ const REASON_LABELS: Record<string, string> = {
   provider_temporarily_unavailable: "La búsqueda no respondió esta vez",
   spotify_not_configured: "La búsqueda no está disponible ahora",
   spotify_audio_features_forbidden:
-    "Spotify identificó la grabación, pero no permite consultar Audio Features a esta aplicación",
+    "Spotify identificó la canción",
   spotify_audio_features_circuit_open:
-    "Omitimos Audio Features porque Spotify ya había denegado ese acceso",
-  spotify_audio_features_unauthorized: "Spotify no autorizó la consulta tonal",
+    "Spotify identificó la canción",
+  spotify_audio_features_unauthorized: "Spotify identificó la canción",
   spotify_audio_features_not_found:
     "Spotify no dispone de datos tonales para esta grabación",
   spotify_audio_features_invalid: "Spotify no devolvió key y mode válidos",
@@ -178,7 +178,7 @@ const REASON_LABELS: Record<string, string> = {
   reccobeats_unavailable: "ReccoBeats no respondió esta vez",
   tonal_source_spotify_audio_features:
     "La tonalidad procede de Spotify Audio Features",
-  tonal_source_reccobeats: "La tonalidad procede de ReccoBeats",
+  tonal_source_reccobeats: "Tonalidad obtenida de ReccoBeats",
   invalid_cached_classification:
     "La caché antigua no contenía una tonalidad válida y se ha descartado",
   invalid_classification_not_cached:
@@ -223,12 +223,28 @@ function describeResultProcess(result: KeyLookupResult): string {
     return "Spotify identificó la grabación y proporcionó sus datos tonales.";
   }
   if (result.source === "reccobeats") {
-    return "Identificamos la grabación y consultamos sus datos musicales en ReccoBeats.";
+    return "Spotify identificó la canción. Tonalidad obtenida de ReccoBeats.";
   }
   if (result.source === "manual") {
     return "Esta tonalidad es una corrección explícita, no un resultado automático.";
   }
   return "La búsqueda automática no obtuvo una tonalidad suficientemente fiable.";
+}
+
+function visibleResultReasons(
+  result: KeyLookupResult,
+  fallback: string
+): string[] {
+  return result.reasonCodes
+    .filter(reason => {
+      if (result.source !== "reccobeats") return true;
+      return (
+        !reason.startsWith("spotify_audio_features_") &&
+        !reason.startsWith("reccobeats_") &&
+        reason !== "tonal_source_reccobeats"
+      );
+    })
+    .map(reason => REASON_LABELS[reason] ?? fallback);
 }
 
 const NAV_ITEMS: Array<{
@@ -620,7 +636,7 @@ function AnalysisProcess() {
         <div>
           <strong>Qué hemos hecho con cada canción</strong>
           <span>
-            Usamos la primera fuente que devuelve una tonalidad válida.
+            Spotify identifica la canción y ReccoBeats busca sus datos tonales.
           </span>
         </div>
       </div>
@@ -637,15 +653,17 @@ function AnalysisProcess() {
         <li>
           <span>2</span>
           <div>
-            <strong>Spotify, si está disponible</strong>
-            <small>Consultamos key y modo de la grabación identificada.</small>
+            <strong>Identificación con Spotify</strong>
+            <small>
+              Confirmamos que es la canción y la versión correctas.
+            </small>
           </div>
         </li>
         <li>
           <span>3</span>
           <div>
-            <strong>ReccoBeats</strong>
-            <small>Es la siguiente fuente automática de datos tonales.</small>
+            <strong>Tonalidad con ReccoBeats</strong>
+            <small>Obtenemos la tonalidad y los BPM de la grabación.</small>
           </div>
         </li>
         <li className="is-optional">
@@ -683,10 +701,9 @@ function AnalysisSongRow({
   const tonalConfidence = result ? getTonalConfidence(result) : null;
   const showAcoustic = result ? needsAcousticAnalysis(result) : false;
   const analyzingAudio = job?.state === "analyzing";
-  const reasons =
-    result?.reasonCodes.map(
-      reason => REASON_LABELS[reason] ?? "Resultado que conviene comprobar"
-    ) ?? [];
+  const reasons = result
+    ? visibleResultReasons(result, "Resultado que conviene comprobar")
+    : [];
 
   return (
     <article
@@ -906,9 +923,10 @@ function AnalyzeChapter({
           </p>
           <h2>Estamos buscando la tonalidad real.</h2>
           <p>
-            Para cada grabación comprobamos una caché vigente y, después,
-            Spotify si está disponible y ReccoBeats. En esta fase no enviamos
-            ningún archivo de audio.
+            Para cada grabación comprobamos una caché vigente. Si no hay un
+            resultado guardado, Spotify identifica la canción y ReccoBeats
+            busca su tonalidad. En esta fase no enviamos ningún archivo de
+            audio.
           </p>
           <div className="progress-block">
             <div className="progress-copy">
@@ -2308,8 +2326,9 @@ export default function Classifier() {
             <tbody>
               {filteredResults.map(result => {
                 const song = songById.get(result.inputId);
-                const reasons = result.reasonCodes.map(
-                  reason => REASON_LABELS[reason] ?? "Necesita una mirada"
+                const reasons = visibleResultReasons(
+                  result,
+                  "Necesita una mirada"
                 );
                 return (
                   <tr key={result.inputId}>
@@ -2336,7 +2355,7 @@ export default function Classifier() {
                         {STATUS_LABELS[result.status]}
                       </span>
                       <small>{reasons.join(" · ")}</small>
-                      <small>{describeResultSource(result)}</small>
+                      <small>{describeResultProcess(result)}</small>
                       {result.keySpanish ? (
                         <em>
                           {result.keySpanish}
