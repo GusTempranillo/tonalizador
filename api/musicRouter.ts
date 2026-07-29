@@ -2,11 +2,10 @@ import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
 import {
   findCached,
-  saveToCache,
+  saveToCacheBestEffort,
   cachedRowToResult,
 } from "./queries/songCache";
 import { keyToSpanish } from "@contracts/keyMap";
-import { PITCH_NAMES, CAMELOT_MAJOR, CAMELOT_MINOR } from "./keyMaps";
 import { titleVariants, cleanArtist } from "./searchVariants";
 import {
   extractSpotifyTrackId,
@@ -15,8 +14,17 @@ import {
   type SpotifyTrackCandidate,
 } from "./matching";
 import { providerFetch } from "./lib/http";
+import { mapWithConcurrency } from "./lib/concurrency";
 import { env } from "./lib/env";
 import { enforceBatchRateLimit } from "./security";
+import { findReccoSearchMatch } from "./reccobeatsSearch";
+import {
+  normalizeTonalFeatures,
+  resolveTonalFeatures,
+  SpotifyAudioFeaturesCircuitBreaker,
+  type TonalLookupOutcome,
+  type TonalProviderOutcome,
+} from "./tonalFeatures";
 import type {
   ClassificationStatus,
   KeyLookupResult,
@@ -54,14 +62,9 @@ type SpotifyTrack = {
   external_urls?: { spotify?: string };
 };
 
-type TonalFeatures = {
-  keyOf: string;
-  camelot: string | null;
-  bpm: number | null;
-};
-
 let spotifyToken: { value: string; expiresAt: number } | null = null;
 let tokenPromise: Promise<string> | null = null;
+const spotifyAudioFeaturesBreaker = new SpotifyAudioFeaturesCircuitBreaker();
 
 async function getSpotifyToken(): Promise<string> {
   if (!env.spotifyClientId || !env.spotifyClientSecret) {
@@ -115,26 +118,6 @@ function toCandidate(track: SpotifyTrack): SpotifyTrackCandidate {
   };
 }
 
-function normalizeFeatures(features: {
-  key?: number;
-  mode?: number;
-  tempo?: number;
-}): TonalFeatures | null {
-  if (
-    features.key === undefined ||
-    features.key < 0 ||
-    features.key >= PITCH_NAMES.length
-  ) {
-    return null;
-  }
-  const minor = features.mode === 0;
-  return {
-    keyOf: `${PITCH_NAMES[features.key]}${minor ? "m" : ""}`,
-    camelot: (minor ? CAMELOT_MINOR : CAMELOT_MAJOR)[features.key] ?? null,
-    bpm: features.tempo ? Math.round(features.tempo) : null,
-  };
-}
-
 async function spotifyGetTrack(
   id: string,
   token: string
@@ -172,7 +155,14 @@ async function spotifySearch(
 
 async function spotifyAudioFeatures(
   spotifyId: string
-): Promise<TonalFeatures | null> {
+): Promise<TonalProviderOutcome> {
+  if (spotifyAudioFeaturesBreaker.isOpen()) {
+    return {
+      features: null,
+      reasonCode: "spotify_audio_features_circuit_open",
+    };
+  }
+
   const token = await getSpotifyToken();
   const response = await providerFetch(
     `${SPOTIFY_API}/audio-features/${encodeURIComponent(spotifyId)}`,
@@ -180,15 +170,42 @@ async function spotifyAudioFeatures(
     { provider: "spotify" }
   );
 
-  // Spotify restricts this endpoint for some newer applications. In that case,
-  // continue with the catalogue fallback instead of failing the whole song.
-  if ([401, 403, 404].includes(response.status)) return null;
+  if (response.status === 403) {
+    spotifyAudioFeaturesBreaker.trip();
+    console.warn("[spotify_audio_features_disabled]", "forbidden");
+    return {
+      features: null,
+      reasonCode: "spotify_audio_features_forbidden",
+    };
+  }
+  if (response.status === 401) {
+    spotifyToken = null;
+    return {
+      features: null,
+      reasonCode: "spotify_audio_features_unauthorized",
+    };
+  }
+  if (response.status === 404) {
+    return {
+      features: null,
+      reasonCode: "spotify_audio_features_not_found",
+    };
+  }
   if (!response.ok)
     throw new Error(`spotify_audio_features_${response.status}`);
 
-  return normalizeFeatures(
-    (await response.json()) as { key?: number; mode?: number; tempo?: number }
+  const features = normalizeTonalFeatures(
+    (await response.json()) as {
+      key?: unknown;
+      mode?: unknown;
+      tempo?: unknown;
+    },
+    "spotify_audio_features"
   );
+  return {
+    features,
+    reasonCode: features ? null : "spotify_audio_features_invalid",
+  };
 }
 
 type Identification = {
@@ -274,48 +291,165 @@ async function identifyTrack(song: SongInput): Promise<Identification> {
   };
 }
 
-async function reccobeatsFeatures(
-  spotifyId: string
-): Promise<TonalFeatures | null> {
-  const mapResponse = await providerFetch(
-    `${RECCO_API}/track?ids=${encodeURIComponent(spotifyId)}`,
-    {},
-    { provider: "reccobeats" }
-  );
-  if (!mapResponse.ok)
-    throw new Error(`reccobeats_track_${mapResponse.status}`);
-  const mapping = (await mapResponse.json()) as {
-    content?: Array<{ id: string }>;
-  };
-  const internalId = mapping.content?.[0]?.id;
-  if (!internalId) return null;
-
+async function fetchReccoAudioFeatures(
+  internalId: string
+): Promise<TonalProviderOutcome> {
   const featureResponse = await providerFetch(
     `${RECCO_API}/track/${encodeURIComponent(internalId)}/audio-features`,
     {},
     { provider: "reccobeats" }
   );
-  if (featureResponse.status === 404) return null;
+  if (featureResponse.status === 404) {
+    return { features: null, reasonCode: "reccobeats_not_found" };
+  }
   if (!featureResponse.ok)
     throw new Error(`reccobeats_features_${featureResponse.status}`);
 
-  // ReccoBeats has removed key/mode from some responses. Keep compatibility
-  // with catalogue entries that still provide them, but do not depend on it.
-  return normalizeFeatures(
+  const features = normalizeTonalFeatures(
     (await featureResponse.json()) as {
-      key?: number;
-      mode?: number;
-      tempo?: number;
-    }
+      key?: unknown;
+      mode?: unknown;
+      tempo?: unknown;
+    },
+    "reccobeats"
   );
+  return {
+    features,
+    reasonCode: features ? null : "reccobeats_invalid",
+  };
+}
+
+async function reccobeatsFeatures(
+  reference: MatchedTrack
+): Promise<TonalProviderOutcome> {
+  const reasonCodes: string[] = [];
+
+  try {
+    const mapResponse = await providerFetch(
+      `${RECCO_API}/track?ids=${encodeURIComponent(reference.spotifyId)}`,
+      {},
+      { provider: "reccobeats" }
+    );
+    if (mapResponse.ok) {
+      const mapping = (await mapResponse.json()) as {
+        content?: Array<{ id?: unknown }>;
+      };
+      const internalId =
+        typeof mapping.content?.[0]?.id === "string"
+          ? mapping.content[0].id
+          : null;
+      if (internalId) {
+        try {
+          const direct = await fetchReccoAudioFeatures(internalId);
+          if (direct.features) {
+            return {
+              ...direct,
+              reasonCodes: ["reccobeats_direct_id_match"],
+            };
+          }
+          reasonCodes.push(
+            direct.reasonCode ?? "reccobeats_direct_features_missing"
+          );
+        } catch (error) {
+          reasonCodes.push("reccobeats_direct_features_unavailable");
+          console.warn(
+            "[reccobeats_direct_features_failed]",
+            error instanceof Error ? error.message : String(error)
+          );
+        }
+      } else {
+        reasonCodes.push("reccobeats_direct_id_not_found");
+      }
+    } else {
+      reasonCodes.push("reccobeats_direct_id_unavailable");
+    }
+  } catch (error) {
+    reasonCodes.push("reccobeats_direct_id_unavailable");
+    console.warn(
+      "[reccobeats_direct_lookup_failed]",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+
+  const searchStartedAt = Date.now();
+  try {
+    const match = await findReccoSearchMatch(reference, async page => {
+      const remainingMs = 8_000 - (Date.now() - searchStartedAt);
+      if (remainingMs <= 0) {
+        throw new Error("reccobeats_search_budget_exceeded");
+      }
+      const url = new URL(`${RECCO_API}/track/search`);
+      url.searchParams.set("searchText", reference.title);
+      url.searchParams.set("page", String(page));
+      const response = await providerFetch(
+        url,
+        {},
+        {
+          provider: "reccobeats",
+          maxAttempts: 1,
+          timeoutMs: Math.min(5_000, remainingMs),
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`reccobeats_search_${response.status}`);
+      }
+      return (await response.json()) as {
+        content?: unknown;
+        page?: unknown;
+        totalPages?: unknown;
+      };
+    });
+    if (!match) {
+      return {
+        features: null,
+        reasonCode: null,
+        reasonCodes: [...reasonCodes, "reccobeats_search_no_exact_match"],
+      };
+    }
+
+    const searched = await fetchReccoAudioFeatures(match.internalId);
+    if (searched.features) {
+      return {
+        ...searched,
+        reasonCodes: [...reasonCodes, match.reasonCode],
+      };
+    }
+    return {
+      features: null,
+      reasonCode: null,
+      reasonCodes: [
+        ...reasonCodes,
+        match.reasonCode,
+        searched.reasonCode ?? "reccobeats_search_features_missing",
+      ],
+    };
+  } catch (error) {
+    console.warn(
+      "[reccobeats_search_failed]",
+      error instanceof Error ? error.message : String(error)
+    );
+    return {
+      features: null,
+      reasonCode: null,
+      reasonCodes: [...reasonCodes, "reccobeats_search_unavailable"],
+    };
+  }
 }
 
 async function getTonalFeatures(
-  spotifyId: string
-): Promise<TonalFeatures | null> {
-  const spotifyFeatures = await spotifyAudioFeatures(spotifyId);
-  if (spotifyFeatures) return spotifyFeatures;
-  return reccobeatsFeatures(spotifyId);
+  reference: MatchedTrack
+): Promise<TonalLookupOutcome> {
+  return resolveTonalFeatures({
+    spotify: () => spotifyAudioFeatures(reference.spotifyId),
+    reccobeats: () => reccobeatsFeatures(reference),
+    onProviderError(provider, error) {
+      console.warn(
+        "[tonal_provider_failed]",
+        provider,
+        error instanceof Error ? error.message : String(error)
+      );
+    },
+  });
 }
 
 function baseResult(
@@ -333,6 +467,7 @@ function baseResult(
     camelot: null,
     bpm: null,
     confidence: null,
+    tonalConfidence: null,
     source: null,
     matchedTrack: null,
     reasonCodes: [],
@@ -357,31 +492,37 @@ async function classifySong(song: SongInput): Promise<KeyLookupResult> {
           reasonCodes: identification.reasons,
         }
       );
-      await saveToCache(song, result);
+      await saveToCacheBestEffort(song, result);
       return result;
     }
 
-    const features = await getTonalFeatures(identification.track.spotifyId);
-    if (!features) {
+    const tonalLookup = await getTonalFeatures(identification.track);
+    if (!tonalLookup.features) {
       const result = baseResult(song, "review", {
         matchedTrack: identification.track,
         confidence: identification.confidence,
-        reasonCodes: [...identification.reasons, "tonal_features_missing"],
+        reasonCodes: [
+          ...identification.reasons,
+          ...tonalLookup.reasonCodes,
+          "tonal_features_missing",
+        ],
       });
-      await saveToCache(song, result);
+      await saveToCacheBestEffort(song, result);
       return result;
     }
+    const features = tonalLookup.features;
     const result = baseResult(song, "classified", {
       keyOf: features.keyOf,
       keySpanish: keyToSpanish(features.keyOf),
       camelot: features.camelot,
       bpm: features.bpm,
       confidence: identification.confidence,
-      source: "reccobeats",
+      tonalConfidence: features.tonalConfidence,
+      source: features.source,
       matchedTrack: identification.track,
-      reasonCodes: identification.reasons,
+      reasonCodes: [...identification.reasons, ...tonalLookup.reasonCodes],
     });
-    await saveToCache(song, result);
+    await saveToCacheBestEffort(song, result);
     return result;
   } catch (error) {
     const reason =
@@ -402,8 +543,9 @@ export const musicRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       enforceBatchRateLimit(ctx.req);
       const startedAt = Date.now();
-      const results: KeyLookupResult[] = [];
-      for (const song of input.songs) results.push(await classifySong(song));
+      const results = await mapWithConcurrency(input.songs, 2, song =>
+        classifySong(song)
+      );
       console.info("[lookup_batch]", results.length, Date.now() - startedAt);
       return { results };
     }),

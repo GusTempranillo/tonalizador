@@ -16,6 +16,7 @@ function failedResult(reasonCode: string): KeyLookupResult {
     camelot: null,
     bpm: null,
     confidence: null,
+    tonalConfidence: null,
     source: null,
     matchedTrack: null,
     reasonCodes: [reasonCode],

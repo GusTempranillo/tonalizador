@@ -19,12 +19,16 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleHelp,
+  Clock3,
+  Database,
   Download,
   ExternalLink,
+  FileAudio,
   FileCheck2,
   FileInput,
   FileOutput,
   FolderDown,
+  Info,
   ListFilter,
   ListMusic,
   LoaderCircle,
@@ -88,6 +92,21 @@ const TUNEMY_MUSIC_IMPORT_URL =
 
 type ReviewFilter = "needs_attention" | "all" | "manual";
 type DeliveryState = "ready" | "downloaded" | "finished";
+type AcousticJob = {
+  state: "analyzing" | "complete" | "error";
+  progress: number;
+  error?: string;
+  algorithm?: string;
+  analyzedSeconds?: number;
+  segments?: number;
+  windows?: Array<{
+    startSeconds: number;
+    endSeconds: number;
+    keySpanish: string;
+    confidence: number;
+  }>;
+};
+type AcousticJobs = Record<string, AcousticJob>;
 
 type ResultCounts = {
   classified: number;
@@ -118,8 +137,95 @@ const REASON_LABELS: Record<string, string> = {
   no_catalogue_candidate: "No aparece en nuestra búsqueda",
   provider_temporarily_unavailable: "La búsqueda no respondió esta vez",
   spotify_not_configured: "La búsqueda no está disponible ahora",
+  spotify_audio_features_forbidden:
+    "Spotify identificó la grabación, pero no permite consultar Audio Features a esta aplicación",
+  spotify_audio_features_circuit_open:
+    "Omitimos Audio Features porque Spotify ya había denegado ese acceso",
+  spotify_audio_features_unauthorized: "Spotify no autorizó la consulta tonal",
+  spotify_audio_features_not_found:
+    "Spotify no dispone de datos tonales para esta grabación",
+  spotify_audio_features_invalid: "Spotify no devolvió key y mode válidos",
+  spotify_audio_features_unavailable:
+    "Spotify Audio Features no respondió esta vez",
+  reccobeats_direct_id_match:
+    "ReccoBeats encontró exactamente el mismo identificador",
+  reccobeats_direct_id_not_found:
+    "ReccoBeats no encontró ese identificador y buscó después por metadatos",
+  reccobeats_direct_id_unavailable:
+    "La consulta directa a ReccoBeats no respondió",
+  reccobeats_direct_features_missing:
+    "La ficha directa de ReccoBeats no tenía una tonalidad válida",
+  reccobeats_direct_features_unavailable:
+    "Los datos tonales directos de ReccoBeats no respondieron",
+  reccobeats_search_exact_spotify_id:
+    "La búsqueda de ReccoBeats confirmó el mismo identificador de Spotify",
+  reccobeats_search_exact_isrc:
+    "La búsqueda de ReccoBeats confirmó el mismo ISRC",
+  reccobeats_search_exact_metadata:
+    "La búsqueda de ReccoBeats confirmó título, artista y duración",
+  reccobeats_search_no_exact_match:
+    "ReccoBeats no encontró una grabación inequívoca",
+  reccobeats_search_features_missing:
+    "La coincidencia de ReccoBeats no tenía key y mode válidos",
+  reccobeats_search_unavailable:
+    "La búsqueda alternativa de ReccoBeats no respondió",
+  reccobeats_not_found: "ReccoBeats no dispone de datos para esta grabación",
+  reccobeats_invalid: "ReccoBeats no devolvió key y mode válidos",
+  reccobeats_unavailable: "ReccoBeats no respondió esta vez",
+  tonal_source_spotify_audio_features:
+    "La tonalidad procede de Spotify Audio Features",
+  tonal_source_reccobeats: "La tonalidad procede de ReccoBeats",
+  invalid_cached_classification:
+    "La caché antigua no contenía una tonalidad válida y se ha descartado",
+  invalid_classification_not_cached:
+    "El resultado incompleto no se ha guardado como clasificado",
   manual_override: "Tonalidad añadida por ti",
+  local_acoustic_analysis: "Calculada a partir del audio elegido por ti",
+  acoustic_low_confidence: "El audio no ha dado un resultado concluyente",
 };
+
+const SOURCE_LABELS: Record<string, string> = {
+  spotify_audio_features: "Spotify Audio Features",
+  reccobeats: "ReccoBeats",
+  local_acoustic: "Análisis acústico local",
+  manual: "Corrección manual",
+};
+
+function getTonalConfidence(result: KeyLookupResult): number | null {
+  return result.tonalConfidence ?? null;
+}
+
+function needsAcousticAnalysis(result: KeyLookupResult): boolean {
+  const tonalConfidence = getTonalConfidence(result);
+  return (
+    !result.keyOf ||
+    result.status !== "classified" ||
+    (tonalConfidence !== null && tonalConfidence < 0.68)
+  );
+}
+
+function describeResultSource(result: KeyLookupResult): string {
+  const source = result.source ? SOURCE_LABELS[result.source] : null;
+  if (result.cached && source) return `Caché válida · ${source}`;
+  if (result.cached) return "Caché válida";
+  return source ?? "Todavía sin fuente tonal";
+}
+
+function describeResultProcess(result: KeyLookupResult): string {
+  if (result.source === "local_acoustic") {
+    return "Calculada en este navegador con el archivo de audio elegido. El audio no se ha subido.";
+  }
+  if (result.source === "spotify_audio_features") {
+    return "Spotify identificó la grabación y proporcionó sus datos tonales.";
+  }
+  if (result.source === "reccobeats") {
+    return "Identificamos la grabación y consultamos sus datos musicales en ReccoBeats.";
+  }
+  if (result.source === "manual") {
+    return "Esta tonalidad es una corrección explícita, no un resultado automático.";
+  }
+  return "La búsqueda automática no obtuvo una tonalidad suficientemente fiable.";
+}
 
 const NAV_ITEMS: Array<{
   id: Chapter;
@@ -451,6 +557,203 @@ function ExportChapter({ onContinue }: { onContinue: () => void }) {
   );
 }
 
+function AnalysisProcess() {
+  return (
+    <div className="analysis-process" aria-label="Cómo buscamos la tonalidad">
+      <div className="analysis-process-heading">
+        <Info aria-hidden="true" />
+        <div>
+          <strong>Qué hemos hecho con cada canción</strong>
+          <span>
+            Usamos la primera fuente que devuelve una tonalidad válida.
+          </span>
+        </div>
+      </div>
+      <ol>
+        <li>
+          <span>1</span>
+          <div>
+            <strong>Caché válida</strong>
+            <small>
+              Reutilizamos un resultado vigente si ya lo calculamos.
+            </small>
+          </div>
+        </li>
+        <li>
+          <span>2</span>
+          <div>
+            <strong>Spotify, si está disponible</strong>
+            <small>Consultamos key y modo de la grabación identificada.</small>
+          </div>
+        </li>
+        <li>
+          <span>3</span>
+          <div>
+            <strong>ReccoBeats</strong>
+            <small>Es la siguiente fuente automática de datos tonales.</small>
+          </div>
+        </li>
+        <li className="is-optional">
+          <span>4</span>
+          <div>
+            <strong>Audio, solo si tú lo decides</strong>
+            <small>
+              Si falta la tonalidad o es dudosa, puedes analizar un archivo
+              local para esa canción.
+            </small>
+          </div>
+        </li>
+      </ol>
+    </div>
+  );
+}
+
+function AnalysisSongRow({
+  index,
+  song,
+  result,
+  job,
+  onAnalyzeAudio,
+}: {
+  index: number;
+  song: SongInput;
+  result: KeyLookupResult | null;
+  job?: AcousticJob;
+  onAnalyzeAudio: (
+    song: SongInput,
+    result: KeyLookupResult | null,
+    file: File
+  ) => void;
+}) {
+  const tonalConfidence = result ? getTonalConfidence(result) : null;
+  const showAcoustic = result ? needsAcousticAnalysis(result) : false;
+  const analyzingAudio = job?.state === "analyzing";
+  const reasons =
+    result?.reasonCodes.map(
+      reason => REASON_LABELS[reason] ?? "Resultado que conviene comprobar"
+    ) ?? [];
+
+  return (
+    <article
+      className={[
+        "analysis-song-row",
+        result ? `is-${result.status}` : "is-pending",
+      ].join(" ")}
+    >
+      <div className="analysis-song-summary">
+        <span className="analysis-song-index" aria-hidden="true">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <div className="analysis-song-title">
+          <strong>{song.title}</strong>
+          <small>{song.artists.join(", ")}</small>
+        </div>
+        <div
+          className={`analysis-song-key ${result?.keySpanish ? "" : "is-empty"}`}
+        >
+          <strong>{result?.keySpanish ?? "Sin tonalidad"}</strong>
+          <small>
+            {result?.keyOf ?? "—"}
+            {result?.camelot ? ` · Camelot ${result.camelot}` : ""}
+            {result?.bpm ? ` · ${Math.round(result.bpm)} BPM` : ""}
+          </small>
+        </div>
+      </div>
+
+      <div className="analysis-song-details">
+        <div className="analysis-song-trace">
+          <span className={`result-status is-${result?.status ?? "pending"}`}>
+            {result ? STATUS_LABELS[result.status] : "Pendiente"}
+          </span>
+          <span className="analysis-source">
+            <Database aria-hidden="true" />
+            {result ? describeResultSource(result) : "Aún no consultada"}
+          </span>
+          {tonalConfidence !== null ? (
+            <span className="analysis-confidence">
+              Confianza tonal {Math.round(tonalConfidence * 100)}%
+            </span>
+          ) : null}
+          <p>
+            {result
+              ? describeResultProcess(result)
+              : "La búsqueda automática todavía no ha terminado para esta canción."}
+            {reasons.length > 0 ? ` ${reasons.join(" · ")}.` : ""}
+          </p>
+          {job?.state === "complete" && job.algorithm ? (
+            <small className="acoustic-method">
+              Método: perfil cromático local ({job.algorithm})
+              {job.analyzedSeconds
+                ? ` · ${Math.round(job.analyzedSeconds)} s analizados`
+                : ""}
+              {job.segments ? ` · ${job.segments} fragmentos` : ""}
+              {job.windows?.length
+                ? ` · Tramos: ${job.windows
+                    .map(
+                      window =>
+                        `${Math.round(window.startSeconds)}–${Math.round(
+                          window.endSeconds
+                        )} s (${window.keySpanish}, ${Math.round(
+                          window.confidence * 100
+                        )} %)`
+                    )
+                    .join("; ")}`
+                : ""}
+            </small>
+          ) : null}
+        </div>
+
+        {showAcoustic ? (
+          <div className="acoustic-choice">
+            <label
+              className={`acoustic-file-button ${analyzingAudio ? "is-busy" : ""}`}
+            >
+              <input
+                type="file"
+                accept="audio/*,.mp3,.m4a,.wav,.flac,.ogg,.aac"
+                disabled={analyzingAudio}
+                onChange={event => {
+                  const file = event.target.files?.[0];
+                  if (file) onAnalyzeAudio(song, result, file);
+                  event.target.value = "";
+                }}
+              />
+              {analyzingAudio ? (
+                <LoaderCircle className="is-spinning" aria-hidden="true" />
+              ) : (
+                <FileAudio aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {analyzingAudio
+                    ? `Analizando… ${Math.round(job.progress * 100)}%`
+                    : "Analizar audio"}
+                </strong>
+                <small>Elige el archivo de esta canción</small>
+              </span>
+            </label>
+            <p>
+              <Clock3 aria-hidden="true" />
+              Tarda más. Se calcula aquí y el audio no sale del navegador.
+            </p>
+            {job?.state === "error" ? (
+              <span className="acoustic-error" role="alert">
+                <AlertCircle aria-hidden="true" />
+                {job.error}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <span className="automatic-result">
+            <CheckCircle2 aria-hidden="true" />
+            Tonalidad automática disponible
+          </span>
+        )}
+      </div>
+    </article>
+  );
+}
+
 type AnalyzeChapterProps = {
   parsed: ParsedCsv | null;
   columns: SongColumns | null;
@@ -464,6 +767,7 @@ type AnalyzeChapterProps = {
   dragOver: boolean;
   pendingCount: number;
   analysisComplete: boolean;
+  acousticJobs: AcousticJobs;
   fileInput: RefObject<HTMLInputElement | null>;
   onDragOver: (event: DragEvent<HTMLButtonElement>) => void;
   onDragLeave: () => void;
@@ -471,6 +775,12 @@ type AnalyzeChapterProps = {
   onFile: (file: File) => void;
   onColumns: (columns: SongColumns) => void;
   onAnalyze: () => void;
+  onAnalyzeAudio: (
+    song: SongInput,
+    result: KeyLookupResult | null,
+    file: File
+  ) => void;
+  onOpenCorrections: () => void;
   onChangeFile: () => void;
   onDownload: () => void;
 };
@@ -488,6 +798,7 @@ function AnalyzeChapter({
   dragOver,
   pendingCount,
   analysisComplete,
+  acousticJobs,
   fileInput,
   onDragOver,
   onDragLeave,
@@ -495,6 +806,8 @@ function AnalyzeChapter({
   onFile,
   onColumns,
   onAnalyze,
+  onAnalyzeAudio,
+  onOpenCorrections,
   onChangeFile,
   onDownload,
 }: AnalyzeChapterProps) {
@@ -538,8 +851,12 @@ function AnalyzeChapter({
           <p className="stage-kicker">
             <Sparkles aria-hidden="true" /> Todo va bien
           </p>
-          <h2>Estamos ordenando tus canciones.</h2>
-          <p>Puedes dejar esta ventana abierta mientras terminamos.</p>
+          <h2>Estamos buscando la tonalidad real.</h2>
+          <p>
+            Para cada grabación comprobamos una caché vigente y, después,
+            Spotify si está disponible y ReccoBeats. En esta fase no enviamos
+            ningún archivo de audio.
+          </p>
           <div className="progress-block">
             <div className="progress-copy">
               <span>
@@ -551,7 +868,10 @@ function AnalyzeChapter({
               value={percentage}
               aria-label={`Progreso: ${percentage}%`}
             />
-            <small>Guardamos cada parte al terminarla.</small>
+            <small>
+              Guardamos cada parte al terminarla y mostraremos la fuente de cada
+              resultado.
+            </small>
           </div>
         </div>
       </section>
@@ -562,53 +882,110 @@ function AnalyzeChapter({
     const preparedCount = results.filter(
       result => result.status !== "error"
     ).length;
-    if (!analysisComplete && pendingCount > 0) {
-      return (
-        <section className="chapter-stage analysis-status-stage">
-          <div className="status-illustration is-paused" aria-hidden="true">
-            <RefreshCw />
-          </div>
-          <div className="status-copy">
-            <p className="stage-kicker is-warm">
-              <AlertCircle aria-hidden="true" /> No se ha perdido nada
-            </p>
-            <h2>El análisis se ha detenido un momento.</h2>
-            <p>
-              Ya hemos preparado {preparedCount} canciones. Solo faltan{" "}
-              {pendingCount} por volver a intentar.
-            </p>
-            {error ? (
-              <div className="friendly-error" role="alert">
-                {error}
-              </div>
-            ) : null}
-            <Button size="lg" onClick={onAnalyze}>
-              <RefreshCw aria-hidden="true" />
-              Continuar análisis
-            </Button>
-          </div>
-        </section>
-      );
-    }
+    const resultMap = new Map(results.map(result => [result.inputId, result]));
+    const displayedSongs =
+      songs ??
+      results.map((result, index) => ({
+        id: result.inputId,
+        title: result.title,
+        artists: result.artists,
+        position: index,
+      }));
+    const needsAudioCount = results.filter(needsAcousticAnalysis).length;
 
     return (
-      <section className="chapter-stage analysis-status-stage">
-        <div className="status-illustration is-success" aria-hidden="true">
-          <CheckCircle2 />
-        </div>
-        <div className="status-copy">
-          <p className="stage-kicker">
-            <Sparkles aria-hidden="true" /> Esta parte está lista
-          </p>
-          <h2>Perfecto, Estrella.</h2>
-          <p>
-            Hemos revisado {results.length} canciones. Ya puedes recoger las
-            listas que hemos preparado.
-          </p>
-          <Button size="lg" onClick={onDownload}>
-            Ver mis listas
-            <ArrowRight aria-hidden="true" />
-          </Button>
+      <section className="chapter-stage analysis-results-stage">
+        <div className="analysis-results-shell">
+          <header className="analysis-results-header">
+            <div>
+              <p
+                className={`stage-kicker ${pendingCount > 0 ? "is-warm" : ""}`}
+              >
+                {pendingCount > 0 ? (
+                  <AlertCircle aria-hidden="true" />
+                ) : (
+                  <BadgeCheck aria-hidden="true" />
+                )}
+                {pendingCount > 0
+                  ? "No se ha perdido nada"
+                  : "Búsqueda automática terminada"}
+              </p>
+              <h2>Tu lista completa.</h2>
+              <p>
+                La tonalidad aparece junto a cada canción. También puedes ver de
+                dónde ha salido y pedir un análisis acústico solo cuando haga
+                falta.
+              </p>
+            </div>
+            <div className="analysis-results-actions">
+              <div>
+                <strong>
+                  {preparedCount} de {displayedSongs.length}
+                </strong>
+                <span>canciones consultadas</span>
+              </div>
+              {needsAudioCount > 0 ? (
+                <span className="needs-audio-count">
+                  <AudioLines aria-hidden="true" />
+                  {needsAudioCount}{" "}
+                  {needsAudioCount === 1
+                    ? "puede analizarse"
+                    : "pueden analizarse"}{" "}
+                  con audio
+                </span>
+              ) : null}
+              {pendingCount > 0 ? (
+                <Button size="sm" onClick={onAnalyze}>
+                  <RefreshCw aria-hidden="true" />
+                  Reintentar las {pendingCount} pendientes
+                </Button>
+              ) : analysisComplete ? (
+                <Button size="sm" onClick={onDownload}>
+                  Ir a Descargar
+                  <ArrowRight aria-hidden="true" />
+                </Button>
+              ) : null}
+              <button
+                type="button"
+                className="analysis-correction-link"
+                onClick={onOpenCorrections}
+              >
+                Corrección manual opcional
+              </button>
+            </div>
+          </header>
+
+          {error ? (
+            <div className="friendly-error analysis-results-error" role="alert">
+              <AlertCircle aria-hidden="true" />
+              {error}
+            </div>
+          ) : null}
+
+          <AnalysisProcess />
+
+          <div className="analysis-song-list" aria-label="Lista de canciones">
+            {displayedSongs.map((song, index) => (
+              <AnalysisSongRow
+                key={song.id}
+                index={index}
+                song={song}
+                result={resultMap.get(song.id) ?? null}
+                job={acousticJobs[song.id]}
+                onAnalyzeAudio={onAnalyzeAudio}
+              />
+            ))}
+          </div>
+
+          <footer className="analysis-results-footer">
+            <LockKeyhole aria-hidden="true" />
+            <p>
+              <strong>Transparencia y privacidad:</strong> para la búsqueda
+              automática enviamos título y artista. Si eliges “Analizar audio”,
+              ese archivo se procesa en este navegador, no se sube y no se
+              conserva.
+            </p>
+          </footer>
         </div>
       </section>
     );
@@ -690,7 +1067,7 @@ function AnalyzeChapter({
           ) : null}
           <div className="song-preview-footer">
             <ShieldCheck aria-hidden="true" />
-            El archivo completo no sale de este navegador.
+            El archivo no se sube. Al analizar, enviamos solo título y artista.
           </div>
         </div>
       </section>
@@ -812,8 +1189,8 @@ function AnalyzeChapter({
           </div>
         ) : (
           <p className="upload-privacy">
-            <LockKeyhole aria-hidden="true" /> Lo leeremos de forma privada aquí
-            mismo.
+            <LockKeyhole aria-hidden="true" /> El archivo no se sube. Enviaremos
+            título y artista solo cuando pulses Analizar.
           </p>
         )}
       </div>
@@ -940,7 +1317,7 @@ function DownloadChapter({
         </h2>
         <p>
           {deliveryState === "ready" && needsReviewBeforeDownload
-            ? "Aún no podemos crear las listas. Revisa las canciones y añade su tonalidad cuando la conozcas."
+            ? "Aún no podemos crear las listas. Vuelve a Analizar y, solo para las canciones pendientes, puedes elegir un archivo de audio local."
             : deliveryState === "ready"
               ? `${counts.classified} canciones están ordenadas por tonalidad y listas para descargar.`
               : "Primero descomprime el archivo. Después abre TuneMyMusic y añade cada lista a YouTube Music."}
@@ -951,7 +1328,7 @@ function DownloadChapter({
             needsReviewBeforeDownload ? (
               <Button size="lg" onClick={onOpenReview}>
                 <ListFilter aria-hidden="true" />
-                Revisar canciones
+                Ver lista completa
               </Button>
             ) : (
               <Button size="lg" onClick={onDownloadAll} disabled={downloading}>
@@ -1007,7 +1384,8 @@ function DownloadChapter({
                   : "canciones necesitan"}{" "}
                 una mirada.
               </strong>
-              Las hemos dejado en una lista aparte para que no se pierdan.
+              En Analizar puedes pedir un análisis acústico individual. Solo se
+              hará si tú eliges el archivo de esa canción.
             </p>
           </div>
         ) : (
@@ -1073,7 +1451,7 @@ function DownloadChapter({
               <div className="group-preview-empty">
                 <AlertCircle aria-hidden="true" />
                 <span>
-                  Las listas aparecerán cuando confirmes alguna tonalidad.
+                  Las listas aparecerán cuando obtengamos una tonalidad válida.
                 </span>
               </div>
             ) : null}
@@ -1087,7 +1465,7 @@ function DownloadChapter({
             ) : null}
             <button type="button" onClick={onOpenReview}>
               <ListFilter aria-hidden="true" />
-              Revisar canciones
+              Ver lista completa
               {needsAttention > 0 ? <span>{needsAttention}</span> : null}
             </button>
           </div>
@@ -1269,11 +1647,11 @@ export default function Classifier() {
   const [groupsOpen, setGroupsOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
-  const [reviewFilter, setReviewFilter] =
-    useState<ReviewFilter>("needs_attention");
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
   const [deliveryState, setDeliveryState] = useState<DeliveryState>("ready");
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [acousticJobs, setAcousticJobs] = useState<AcousticJobs>({});
   const fileInput = useRef<HTMLInputElement>(null);
   const fileReadId = useRef(0);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -1414,7 +1792,8 @@ export default function Classifier() {
     setDeliveryState("ready");
     setDownloading(false);
     setDownloadError(null);
-    setReviewFilter("needs_attention");
+    setAcousticJobs({});
+    setReviewFilter("all");
     setResetOpen(false);
     setChapter("export");
   }, []);
@@ -1461,8 +1840,6 @@ export default function Classifier() {
           return result ? [result] : [];
         });
         setError(incompleteAnalysisMessage(remaining.length, remainingResults));
-      } else {
-        setChapter("download");
       }
     } catch (analysisError) {
       console.error("[analysis_request_failed]", analysisError);
@@ -1485,6 +1862,7 @@ export default function Classifier() {
               keyOf,
               keySpanish: keyToSpanish(keyOf),
               camelot: keyToCamelot(keyOf),
+              tonalConfidence: null,
               source: "manual",
               reasonCodes: ["manual_override"],
               cached: false,
@@ -1493,6 +1871,103 @@ export default function Classifier() {
       )
     );
   };
+
+  const analyzeLocalAudio = useCallback(
+    async (
+      song: SongInput,
+      existingResult: KeyLookupResult | null,
+      file: File
+    ) => {
+      setAcousticJobs(current => ({
+        ...current,
+        [song.id]: { state: "analyzing", progress: 0 },
+      }));
+
+      try {
+        const { analyzeAudioFile } = await import("@/lib/acousticAnalysis");
+        const analysis = await analyzeAudioFile(file, {
+          onProgress: progress => {
+            const safeProgress = Math.min(1, Math.max(0, progress));
+            setAcousticJobs(current => ({
+              ...current,
+              [song.id]: { state: "analyzing", progress: safeProgress },
+            }));
+          },
+        });
+
+        if (
+          !KEY_OPTIONS.includes(
+            analysis.keyOf as (typeof KEY_OPTIONS)[number]
+          ) ||
+          (analysis.mode !== 0 && analysis.mode !== 1)
+        ) {
+          throw new Error("El análisis no devolvió una tonalidad válida.");
+        }
+
+        setResults(current => {
+          const resultMap = new Map(
+            current.map(result => [result.inputId, result])
+          );
+          const previous = resultMap.get(song.id) ?? existingResult;
+          const nextResult: KeyLookupResult = {
+            inputId: song.id,
+            title: song.title,
+            artists: song.artists,
+            status: analysis.isReliable ? "classified" : "review",
+            keyOf: analysis.keyOf,
+            keySpanish: analysis.keySpanish,
+            camelot: analysis.camelot,
+            bpm: analysis.bpm,
+            confidence: previous?.confidence ?? null,
+            tonalConfidence: analysis.confidence,
+            source: "local_acoustic",
+            matchedTrack: previous?.matchedTrack ?? null,
+            reasonCodes: analysis.isReliable
+              ? ["local_acoustic_analysis"]
+              : ["local_acoustic_analysis", "acoustic_low_confidence"],
+            cached: false,
+          };
+          resultMap.set(song.id, nextResult);
+          return songs
+            ? orderedResults(songs, resultMap)
+            : [...current, nextResult];
+        });
+
+        setAcousticJobs(current => ({
+          ...current,
+          [song.id]: {
+            state: "complete",
+            progress: 1,
+            algorithm: analysis.algorithm,
+            analyzedSeconds: analysis.analyzedSeconds,
+            segments: analysis.segments,
+            windows: analysis.windows.map(window => ({
+              startSeconds: window.startSeconds,
+              endSeconds: window.endSeconds,
+              keySpanish: window.keySpanish,
+              confidence: window.confidence,
+            })),
+          },
+        }));
+        setDeliveryState("ready");
+        setDownloadError(null);
+      } catch (analysisError) {
+        console.error("[local_acoustic_analysis_failed]", analysisError);
+        setAcousticJobs(current => ({
+          ...current,
+          [song.id]: {
+            state: "error",
+            progress: 0,
+            error:
+              analysisError instanceof Error
+                ? analysisError.message
+                : "No hemos podido analizar este archivo de audio.",
+          },
+        }));
+      }
+    },
+    [songs]
+  );
 
   const groups = useMemo(() => groupByKey(results), [results]);
   const counts = useMemo(
@@ -1610,6 +2085,7 @@ export default function Classifier() {
                 dragOver={dragOver}
                 pendingCount={pendingSongs.length}
                 analysisComplete={analysisComplete}
+                acousticJobs={acousticJobs}
                 fileInput={fileInput}
                 onDragOver={event => {
                   event.preventDefault();
@@ -1620,6 +2096,10 @@ export default function Classifier() {
                 onFile={file => void handleFile(file)}
                 onColumns={applyColumns}
                 onAnalyze={() => void analyze()}
+                onAnalyzeAudio={(song, result, file) =>
+                  void analyzeLocalAudio(song, result, file)
+                }
+                onOpenCorrections={openReview}
                 onChangeFile={changeFile}
                 onDownload={() => setChapter("download")}
               />
@@ -1637,7 +2117,7 @@ export default function Classifier() {
                 onGoAnalyze={() => setChapter("analyze")}
                 onDownloadAll={() => void handleDownloadAll()}
                 onOpenGroups={openGroups}
-                onOpenReview={openReview}
+                onOpenReview={() => setChapter("analyze")}
                 onImported={() => setDeliveryState("finished")}
                 onStartAgain={() => setResetOpen(true)}
               />
@@ -1691,11 +2171,16 @@ export default function Classifier() {
 
       <DetailDrawer
         open={reviewOpen}
-        eyebrow="Detalles"
-        title="Canción por canción"
+        eyebrow="Opcional"
+        title="Correcciones manuales"
         wide
         onClose={closeReview}
       >
+        <p className="manual-correction-intro">
+          La tonalidad automática y su fuente se conservan hasta que tú elijas
+          cambiar una canción expresamente. Corregir aquí no sustituye el
+          análisis automático.
+        </p>
         <div
           className="review-toolbar"
           role="group"
@@ -1703,12 +2188,12 @@ export default function Classifier() {
         >
           {(
             [
+              ["all", "Todas", results.length],
               [
                 "needs_attention",
-                "Por revisar",
+                "Pendientes",
                 counts.review + counts.not_found + counts.error,
               ],
-              ["all", "Todas", results.length],
               ["manual", "Corregidas", counts.manual],
             ] as Array<[ReviewFilter, string, number]>
           ).map(([value, label, count]) => (
@@ -1746,8 +2231,8 @@ export default function Classifier() {
               <tr>
                 <th scope="col">Tu canción</th>
                 <th scope="col">Lo que encontramos</th>
-                <th scope="col">Resultado</th>
-                <th scope="col">Cambiar tonalidad</th>
+                <th scope="col">Fuente y tonalidad</th>
+                <th scope="col">Corrección opcional</th>
               </tr>
             </thead>
             <tbody>
@@ -1781,6 +2266,7 @@ export default function Classifier() {
                         {STATUS_LABELS[result.status]}
                       </span>
                       <small>{reasons.join(" · ")}</small>
+                      <small>{describeResultSource(result)}</small>
                       {result.keySpanish ? (
                         <em>
                           {result.keySpanish}
@@ -1791,25 +2277,31 @@ export default function Classifier() {
                     </td>
                     <td>
                       {song ? (
-                        <Select
-                          value={result.keyOf ?? ""}
-                          onValueChange={value =>
-                            setTone(song, value as (typeof KEY_OPTIONS)[number])
-                          }
-                        >
-                          <SelectTrigger
-                            aria-label={`Cambiar tonalidad de ${result.title}`}
+                        <details className="manual-correction">
+                          <summary>Corregir manualmente</summary>
+                          <Select
+                            value={result.keyOf ?? ""}
+                            onValueChange={value =>
+                              setTone(
+                                song,
+                                value as (typeof KEY_OPTIONS)[number]
+                              )
+                            }
                           >
-                            <SelectValue placeholder="Elegir tonalidad" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {KEY_OPTIONS.map(key => (
-                              <SelectItem key={key} value={key}>
-                                {keyToSpanish(key)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                            <SelectTrigger
+                              aria-label={`Corregir manualmente la tonalidad de ${result.title}`}
+                            >
+                              <SelectValue placeholder="Elegir tonalidad" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {KEY_OPTIONS.map(key => (
+                                <SelectItem key={key} value={key}>
+                                  {keyToSpanish(key)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </details>
                       ) : null}
                     </td>
                   </tr>

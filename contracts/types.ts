@@ -1,7 +1,12 @@
 export * from "./errors";
 
 export type ClassificationStatus = "classified" | "review" | "not_found" | "error";
-export type ClassificationSource = "reccobeats" | "manual" | null;
+export type ClassificationSource =
+  | "spotify_audio_features"
+  | "reccobeats"
+  | "local_acoustic"
+  | "manual"
+  | null;
 
 export interface SongInput {
   /** Stable client-side identifier used to resume interrupted analyses. */
@@ -38,6 +43,8 @@ export interface KeyLookupResult {
   bpm: number | null;
   /** 0..1 confidence in the catalogue match, not in musical ground truth. */
   confidence: number | null;
+  /** 0..1 confidence in the tonal estimate, when the provider exposes one. */
+  tonalConfidence: number | null;
   source: ClassificationSource;
   matchedTrack: MatchedTrack | null;
   reasonCodes: string[];

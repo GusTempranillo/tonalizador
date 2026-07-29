@@ -38,17 +38,18 @@ const HELP: Record<Chapter, ChapterHelp> = {
   },
   analyze: {
     eyebrow: "Analizar",
-    title: "Déjanos hacer la parte difícil",
+    title: "Busca la tonalidad real",
     instructions: [
       "Suelta aquí el archivo que acabas de guardar.",
       "Comprueba cuántas canciones hemos encontrado.",
       "Pulsa «Analizar canciones».",
-      "Deja esta ventana abierta mientras terminamos.",
+      "Consulta la tonalidad y la fuente junto a cada canción.",
+      "Si una queda sin tonalidad o es dudosa, decide si quieres analizar su archivo de audio.",
     ],
     reason:
-      "Buscamos cada canción y descubrimos su tonalidad de forma automática. Si una coincidencia no está clara, la apartamos para que puedas revisarla.",
+      "Primero comprobamos una caché vigente. Después probamos Spotify Audio Features, cuando está disponible, y ReccoBeats. Si ninguna fuente da una tonalidad fiable, no inventamos el resultado: te ofrecemos analizar solo esa canción a partir del archivo de audio que tú elijas.",
     analogy:
-      "Es parecido a reconocer si una voz suena más grave o más aguda, pero aplicado a toda tu playlist.",
+      "El análisis acústico tarda más, se ejecuta en este navegador y solo comienza si tú lo pides. El archivo de audio no se sube ni se conserva.",
   },
   download: {
     eyebrow: "Descargar",

@@ -14,6 +14,7 @@ services:
     volumes:
       - tonalizador_db:/var/lib/mysql
       - ./db/migrations/0001_precision_cache.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+      - ./db/migrations/0002_tonal_confidence.sql:/docker-entrypoint-initdb.d/002-tonal-confidence.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u root -p$$MARIADB_ROOT_PASSWORD --silent"]
       interval: 10s

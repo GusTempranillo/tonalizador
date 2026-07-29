@@ -28,6 +28,7 @@ const completeSession: SavedAnalysis = {
       camelot: "8B",
       bpm: 120,
       confidence: 0.95,
+      tonalConfidence: null,
       source: "reccobeats",
       matchedTrack: null,
       reasonCodes: [],

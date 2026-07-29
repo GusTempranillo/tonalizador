@@ -24,6 +24,7 @@ export const songCache = mysqlTable(
     camelot: varchar("camelot", { length: 8 }),
     bpm: int("bpm"),
     confidenceBp: int("confidence_bp"),
+    tonalConfidenceBp: int("tonal_confidence_bp"),
     source: varchar("source", { length: 24 }),
     matchedTitle: varchar("matched_title", { length: 512 }),
     matchedArtists: text("matched_artists"),

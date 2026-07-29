@@ -242,7 +242,7 @@ export function buildReviewCsv(results: KeyLookupResult[]): string {
 
 export function buildSummaryCsv(results: KeyLookupResult[]): string {
   return [
-    "Estado,Título,Artista,Tonalidad,Camelot,BPM,Fuente,Confianza,Coincidencia,Artista encontrado,ISRC,Motivos",
+    "Estado,Título,Artista,Tonalidad,Camelot,BPM,Fuente,Confianza tonal,Confianza de coincidencia,Coincidencia,Artista encontrado,ISRC,Motivos",
     ...results.map(result =>
       [
         result.status,
@@ -252,6 +252,9 @@ export function buildSummaryCsv(results: KeyLookupResult[]): string {
         result.camelot,
         result.bpm,
         result.source,
+        result.tonalConfidence === null
+          ? ""
+          : result.tonalConfidence.toFixed(3),
         result.confidence === null ? "" : result.confidence.toFixed(3),
         result.matchedTrack?.title,
         result.matchedTrack?.artists.join(", "),

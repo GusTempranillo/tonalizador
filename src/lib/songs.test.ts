@@ -80,6 +80,7 @@ describe("importación y exportación CSV", () => {
       camelot: "8B",
       bpm: 120,
       confidence: 0.96,
+      tonalConfidence: 0.82,
       source: "reccobeats",
       matchedTrack: null,
       reasonCodes: ["metadata_high_confidence"],
@@ -87,6 +88,8 @@ describe("importación y exportación CSV", () => {
     };
     const csv = buildSummaryCsv([result]);
     expect(csv).toContain("Do Mayor");
+    expect(csv).toContain("Confianza tonal,Confianza de coincidencia");
+    expect(csv).toContain("0.820");
     expect(csv).toContain("0.960");
     expect(csv).toContain("metadata_high_confidence");
   });
@@ -155,6 +158,7 @@ function makeResult(
     camelot: keySpanish ? "8B" : null,
     bpm: keySpanish ? 120 : null,
     confidence: 0.95,
+    tonalConfidence: null,
     source: keySpanish ? "reccobeats" : null,
     matchedTrack: null,
     reasonCodes: [],
