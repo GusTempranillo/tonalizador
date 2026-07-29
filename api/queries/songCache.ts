@@ -11,7 +11,7 @@ import type {
 } from "@contracts/types";
 import { KEY_OPTIONS, keyToSpanish } from "@contracts/keyMap";
 
-export const ALGORITHM_VERSION = "matching-v3";
+export const ALGORITHM_VERSION = "matching-v4";
 const PROVIDER_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const NOT_FOUND_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CACHEABLE_TONAL_SOURCES = new Set<ClassificationSource>([

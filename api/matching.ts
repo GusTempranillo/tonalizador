@@ -17,8 +17,19 @@ export interface ScoredCandidate {
   artistScore: number;
   albumScore: number | null;
   durationScore: number | null;
+  titleExact: boolean;
+  primaryArtistExact: boolean;
+  remasterEquivalent: boolean;
   usedAggressiveTitleVariant: boolean;
 }
+
+export type CatalogueMatchReason =
+  | "metadata_exact_title_artist"
+  | "metadata_remaster_equivalent"
+  | "metadata_high_confidence";
+
+const REMASTER_SUFFIX_RE =
+  /\s*(?:[-–—]\s*|\(\s*|\[\s*)(?:\d{4}\s*)?remaster(?:ed)?(?:\s*\d{4})?\s*(?:\)|\])?\s*$/i;
 
 export function normalizeForMatch(value: string): string {
   return value
@@ -100,6 +111,9 @@ export function scoreTrack(song: SongInput, track: SpotifyTrackCandidate): Score
   );
   const albumScore = song.album && track.album ? textSimilarity(song.album, track.album) : null;
   const durationScore = scoreDuration(song.durationMs, track.durationMs);
+  const cleanedInputTitle = normalizeForMatch(cleanTitle(song.title));
+  const normalizedTrackTitle = normalizeForMatch(track.title);
+  const withoutRemaster = track.title.replace(REMASTER_SUFFIX_RE, "").trim();
 
   const weighted: Array<[number, number]> = [
     [titleScore, 0.5],
@@ -117,6 +131,13 @@ export function scoreTrack(song: SongInput, track: SpotifyTrackCandidate): Score
     artistScore,
     albumScore,
     durationScore,
+    titleExact: cleanedInputTitle === normalizedTrackTitle,
+    primaryArtistExact:
+      normalizeForMatch(primaryInput) ===
+      normalizeForMatch(primaryCandidate),
+    remasterEquivalent:
+      withoutRemaster !== track.title &&
+      cleanedInputTitle === normalizeForMatch(withoutRemaster),
     usedAggressiveTitleVariant:
       titleVariantIndex > 0 &&
       normalizeForMatch(variants[titleVariantIndex]) !== normalizeForMatch(cleanTitle(song.title)),
@@ -131,15 +152,105 @@ export function rankCandidates(song: SongInput, candidates: SpotifyTrackCandidat
 
 export function isHighConfidenceMatch(
   best: ScoredCandidate,
-  runnerUp?: ScoredCandidate,
+  runnerUpOrCompetitors?: ScoredCandidate | ScoredCandidate[],
 ): boolean {
-  const gap = runnerUp ? best.score - runnerUp.score : 1;
+  const competitors = Array.isArray(runnerUpOrCompetitors)
+    ? runnerUpOrCompetitors
+    : runnerUpOrCompetitors
+      ? [runnerUpOrCompetitors]
+      : [];
+  const meaningfulRunnerUp = findMeaningfulRunnerUp(best, competitors);
+  const gap = meaningfulRunnerUp
+    ? best.score - meaningfulRunnerUp.score
+    : 1;
   return (
     best.score >= MATCH_THRESHOLDS.overall &&
     best.titleScore >= MATCH_THRESHOLDS.title &&
     best.artistScore >= MATCH_THRESHOLDS.artist &&
     gap >= MATCH_THRESHOLDS.runnerUpGap &&
     !best.usedAggressiveTitleVariant
+  );
+}
+
+export function isExactTitleArtistMatch(
+  candidate: ScoredCandidate,
+): boolean {
+  return (
+    candidate.titleExact &&
+    candidate.primaryArtistExact &&
+    !candidate.usedAggressiveTitleVariant
+  );
+}
+
+export function isSafeRemasterEquivalent(
+  candidate: ScoredCandidate,
+): boolean {
+  return (
+    candidate.remasterEquivalent &&
+    candidate.primaryArtistExact &&
+    !candidate.usedAggressiveTitleVariant
+  );
+}
+
+export function catalogueMatchReason(
+  best: ScoredCandidate,
+  competitors: ScoredCandidate[],
+): CatalogueMatchReason | null {
+  if (isExactTitleArtistMatch(best)) {
+    return "metadata_exact_title_artist";
+  }
+  if (isSafeRemasterEquivalent(best)) {
+    return "metadata_remaster_equivalent";
+  }
+  return isHighConfidenceMatch(best, competitors)
+    ? "metadata_high_confidence"
+    : null;
+}
+
+export function findMeaningfulRunnerUp(
+  best: ScoredCandidate,
+  competitors: ScoredCandidate[],
+): ScoredCandidate | undefined {
+  return competitors.find(
+    candidate => !isExactCatalogueDuplicate(best, candidate),
+  );
+}
+
+/**
+ * Spotify often returns the same studio track more than once through albums,
+ * compilations or territories. Those rows are not competing identifications
+ * when both title and primary artist are exact; covers and named versions
+ * remain meaningful competitors.
+ */
+function isExactCatalogueDuplicate(
+  best: ScoredCandidate,
+  candidate: ScoredCandidate,
+): boolean {
+  if (
+    !best.titleExact ||
+    !best.primaryArtistExact ||
+    !candidate.titleExact ||
+    !candidate.primaryArtistExact ||
+    best.usedAggressiveTitleVariant ||
+    candidate.usedAggressiveTitleVariant
+  ) {
+    return false;
+  }
+  const sameMetadata =
+    normalizeForMatch(best.track.title) ===
+      normalizeForMatch(candidate.track.title) &&
+    normalizeForMatch(best.track.artists[0] ?? "") ===
+      normalizeForMatch(candidate.track.artists[0] ?? "");
+  if (!sameMetadata) return false;
+
+  const bestIsrc = best.track.isrc?.trim().toUpperCase();
+  const candidateIsrc = candidate.track.isrc?.trim().toUpperCase();
+  if (bestIsrc && candidateIsrc) return bestIsrc === candidateIsrc;
+
+  return Boolean(
+    best.track.durationMs &&
+      candidate.track.durationMs &&
+      Math.abs(best.track.durationMs - candidate.track.durationMs) <= 5_000,
   );
 }
 

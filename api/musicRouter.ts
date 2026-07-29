@@ -8,8 +8,9 @@ import {
 import { keyToSpanish } from "@contracts/keyMap";
 import { titleVariants, cleanArtist } from "./searchVariants";
 import {
+  catalogueMatchReason,
   extractSpotifyTrackId,
-  isHighConfidenceMatch,
+  findMeaningfulRunnerUp,
   rankCandidates,
   type SpotifyTrackCandidate,
 } from "./matching";
@@ -269,18 +270,24 @@ async function identifyTrack(song: SongInput): Promise<Identification> {
       reasons: ["no_catalogue_candidate"],
     };
   }
-  if (isHighConfidenceMatch(best, ranked[1])) {
+  const competitors = ranked.slice(1);
+  const matchReason = catalogueMatchReason(best, competitors);
+  if (matchReason) {
     return {
       status: "accepted",
       track: best.track,
       confidence: best.score,
-      reasons: ["metadata_high_confidence"],
+      reasons: [matchReason],
     };
   }
+  const meaningfulRunnerUp = findMeaningfulRunnerUp(best, competitors);
   const reasons = ["ambiguous_catalogue_match"];
   if (best.titleScore < 0.85) reasons.push("title_below_threshold");
   if (best.artistScore < 0.8) reasons.push("artist_below_threshold");
-  if (ranked[1] && best.score - ranked[1].score < 0.1)
+  if (
+    meaningfulRunnerUp &&
+    best.score - meaningfulRunnerUp.score < 0.1
+  )
     reasons.push("runner_up_too_close");
   if (best.usedAggressiveTitleVariant) reasons.push("version_marker_removed");
   return {

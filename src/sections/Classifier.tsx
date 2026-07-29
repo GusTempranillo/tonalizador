@@ -127,6 +127,10 @@ const STATUS_LABELS: Record<ClassificationStatus, string> = {
 const REASON_LABELS: Record<string, string> = {
   spotify_id_exact: "Coincidencia exacta",
   isrc_exact: "Coincidencia exacta",
+  metadata_exact_title_artist:
+    "El título y el artista principal coinciden exactamente",
+  metadata_remaster_equivalent:
+    "La única diferencia es que el catálogo identifica una remasterización",
   metadata_high_confidence: "Título y artista coinciden",
   ambiguous_catalogue_match: "Hay más de una versión posible",
   title_below_threshold: "El título es algo distinto",

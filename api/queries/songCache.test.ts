@@ -81,7 +81,7 @@ describe("identidad de caché", () => {
 
   it("mantiene una versión explícita del algoritmo", () => {
     expect(ALGORITHM_VERSION).toMatch(/^matching-v\d+$/);
-    expect(ALGORITHM_VERSION).toBe("matching-v3");
+    expect(ALGORITHM_VERSION).toBe("matching-v4");
   });
 
   it("no reutiliza correcciones manuales ni versiones antiguas", () => {
