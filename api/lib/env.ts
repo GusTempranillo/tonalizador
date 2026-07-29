@@ -10,8 +10,8 @@ function required(name: string): string {
 
 export const env = {
   appId: process.env.APP_ID ?? "",
-  spotifyClientId: process.env.SPOTIFY_CLIENT_ID ?? "",
-  spotifyClientSecret: process.env.SPOTIFY_CLIENT_SECRET ?? "",
+  spotifyClientId: required("SPOTIFY_CLIENT_ID"),
+  spotifyClientSecret: required("SPOTIFY_CLIENT_SECRET"),
   spotifyMarket: process.env.SPOTIFY_MARKET ?? "ES",
   isProduction: process.env.NODE_ENV === "production",
   databaseUrl: required("DATABASE_URL"),

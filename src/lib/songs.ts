@@ -1,10 +1,29 @@
 import Papa from "papaparse";
-import JSZip from "jszip";
 import type { KeyLookupResult, SongInput } from "@contracts/types";
 
 const COLUMN_CANDIDATES = {
-  title: ["track name", "track", "title", "song", "song name", "name", "nombre", "canción", "cancion", "título", "titulo"],
-  artist: ["artist name", "artist", "artists", "artista", "artistas", "artist(s)", "performer"],
+  title: [
+    "track name",
+    "track",
+    "title",
+    "song",
+    "song name",
+    "name",
+    "nombre",
+    "canción",
+    "cancion",
+    "título",
+    "titulo",
+  ],
+  artist: [
+    "artist name",
+    "artist",
+    "artists",
+    "artista",
+    "artistas",
+    "artist(s)",
+    "performer",
+  ],
   album: ["album name", "album", "álbum"],
   isrc: ["isrc"],
   platformUrl: ["track url", "song url", "spotify url", "url", "uri"],
@@ -35,15 +54,18 @@ export interface ExtractedSongs {
   duplicateSongs: Array<{ title: string; artist: string }>;
 }
 
-function findColumn(headers: string[], candidates: readonly string[]): string | null {
-  const normalized = headers.map((header) => header.trim().toLowerCase());
+function findColumn(
+  headers: string[],
+  candidates: readonly string[]
+): string | null {
+  const normalized = headers.map(header => header.trim().toLowerCase());
   for (const candidate of candidates) {
     const index = normalized.indexOf(candidate);
     if (index >= 0) return headers[index];
   }
   for (const candidate of candidates) {
     if (candidate.length < 4) continue;
-    const index = normalized.findIndex((header) => header.includes(candidate));
+    const index = normalized.findIndex(header => header.includes(candidate));
     if (index >= 0) return headers[index];
   }
   return null;
@@ -66,15 +88,15 @@ export function parseCsvFile(file: File): Promise<ParsedCsv> {
     Papa.parse<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: true,
-      transformHeader: (header) => header.replace(/^\uFEFF/, "").trim(),
-      complete: (result) => {
-        if (result.errors.some((error) => error.type === "Quotes")) {
+      transformHeader: header => header.replace(/^\uFEFF/, "").trim(),
+      complete: result => {
+        if (result.errors.some(error => error.type === "Quotes")) {
           reject(new Error("CSV_MALFORMED"));
           return;
         }
         const headers = result.meta.fields ?? [];
-        const rows = result.data.filter((row) =>
-          Object.values(row).some((value) => value?.trim()),
+        const rows = result.data.filter(row =>
+          Object.values(row).some(value => value?.trim())
         );
         resolve({ headers, rows, columns: detectColumns(headers) });
       },
@@ -106,16 +128,23 @@ function stableHash(value: string): string {
 
 function normalizedIdentity(parts: Array<string | null | undefined>): string {
   return parts
-    .map((part) => (part ?? "").normalize("NFKC").trim().toLowerCase().replace(/\s+/g, " "))
+    .map(part =>
+      (part ?? "").normalize("NFKC").trim().toLowerCase().replace(/\s+/g, " ")
+    )
     .join("|");
 }
 
 export function extractSongs(
   rows: Record<string, string>[],
-  columns: SongColumns,
+  columns: SongColumns
 ): ExtractedSongs {
   if (!columns.title || !columns.artist) {
-    return { songs: [], skippedArtists: 0, duplicateCount: 0, duplicateSongs: [] };
+    return {
+      songs: [],
+      skippedArtists: 0,
+      duplicateCount: 0,
+      duplicateSongs: [],
+    };
   }
   const seen = new Set<string>();
   const songs: SongInput[] = [];
@@ -123,14 +152,19 @@ export function extractSongs(
   let skippedArtists = 0;
 
   rows.forEach((row, rowIndex) => {
-    if (columns.type && (row[columns.type] ?? "").trim().toLowerCase() === "artist") {
+    if (
+      columns.type &&
+      (row[columns.type] ?? "").trim().toLowerCase() === "artist"
+    ) {
       skippedArtists++;
       return;
     }
     const title = (row[columns.title!] ?? "").trim();
     const artist = (row[columns.artist!] ?? "").trim();
     if (!title || !artist) return;
-    const album = columns.album ? (row[columns.album] ?? "").trim() || null : null;
+    const album = columns.album
+      ? (row[columns.album] ?? "").trim() || null
+      : null;
     const isrc = columns.isrc ? (row[columns.isrc] ?? "").trim() || null : null;
     const platformUrl = columns.platformUrl
       ? (row[columns.platformUrl] ?? "").trim() || null
@@ -138,7 +172,12 @@ export function extractSongs(
     const durationMs = columns.duration
       ? parseDuration(row[columns.duration] ?? "")
       : null;
-    const fingerprint = normalizedIdentity([isrc || platformUrl, artist, title, album]);
+    const fingerprint = normalizedIdentity([
+      isrc || platformUrl,
+      artist,
+      title,
+      album,
+    ]);
     if (seen.has(fingerprint)) {
       duplicateSongs.push({ title, artist });
       return;
@@ -170,18 +209,22 @@ function csvEscape(value: string | number | null | undefined): string {
   return text;
 }
 
-export function buildPlaylistCsv(songs: Array<{ title: string; artists: string[] }>): string {
+export function buildPlaylistCsv(
+  songs: Array<{ title: string; artists: string[] }>
+): string {
   return [
     "Track Name,Artist Name",
-    ...songs.map((song) => `${csvEscape(song.title)},${csvEscape(song.artists.join(", "))}`),
+    ...songs.map(
+      song => `${csvEscape(song.title)},${csvEscape(song.artists.join(", "))}`
+    ),
   ].join("\r\n");
 }
 
 export function buildReviewCsv(results: KeyLookupResult[]): string {
-  const rows = results.filter((result) => result.status !== "classified");
+  const rows = results.filter(result => result.status !== "classified");
   return [
     "Estado,Título,Artista,Coincidencia,Artista encontrado,Confianza,Motivos",
-    ...rows.map((result) =>
+    ...rows.map(result =>
       [
         result.status,
         result.title,
@@ -190,7 +233,9 @@ export function buildReviewCsv(results: KeyLookupResult[]): string {
         result.matchedTrack?.artists.join(", "),
         result.confidence === null ? "" : result.confidence.toFixed(3),
         result.reasonCodes.join(" | "),
-      ].map(csvEscape).join(","),
+      ]
+        .map(csvEscape)
+        .join(",")
     ),
   ].join("\r\n");
 }
@@ -198,7 +243,7 @@ export function buildReviewCsv(results: KeyLookupResult[]): string {
 export function buildSummaryCsv(results: KeyLookupResult[]): string {
   return [
     "Estado,Título,Artista,Tonalidad,Camelot,BPM,Fuente,Confianza,Coincidencia,Artista encontrado,ISRC,Motivos",
-    ...results.map((result) =>
+    ...results.map(result =>
       [
         result.status,
         result.title,
@@ -212,15 +257,18 @@ export function buildSummaryCsv(results: KeyLookupResult[]): string {
         result.matchedTrack?.artists.join(", "),
         result.matchedTrack?.isrc,
         result.reasonCodes.join(" | "),
-      ].map(csvEscape).join(","),
+      ]
+        .map(csvEscape)
+        .join(",")
     ),
   ].join("\r\n");
 }
 
 export function downloadBlob(filename: string, content: string | Blob) {
-  const blob = typeof content === "string"
-    ? new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" })
-    : content;
+  const blob =
+    typeof content === "string"
+      ? new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" })
+      : content;
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -231,7 +279,9 @@ export function downloadBlob(filename: string, content: string | Blob) {
   setTimeout(() => URL.revokeObjectURL(url), 5_000);
 }
 
-export function groupByKey(results: KeyLookupResult[]): Map<string, KeyLookupResult[]> {
+export function groupByKey(
+  results: KeyLookupResult[]
+): Map<string, KeyLookupResult[]> {
   const groups = new Map<string, KeyLookupResult[]>();
   for (const result of results) {
     if (result.status !== "classified" || !result.keySpanish) continue;
@@ -241,26 +291,35 @@ export function groupByKey(results: KeyLookupResult[]): Map<string, KeyLookupRes
   }
   return new Map(
     [...groups.entries()].sort(([left], [right]) => {
-      const modeDifference = Number(left.endsWith("menor")) - Number(right.endsWith("menor"));
+      const modeDifference =
+        Number(left.endsWith("menor")) - Number(right.endsWith("menor"));
       return modeDifference || left.localeCompare(right, "es");
-    }),
+    })
   );
 }
 
 export async function downloadAllAsZip(
   groups: Map<string, KeyLookupResult[]>,
-  results: KeyLookupResult[],
+  results: KeyLookupResult[]
 ) {
+  downloadBlob(
+    "playlists-por-tonalidad.zip",
+    await buildPlaylistsZip(groups, results)
+  );
+}
+
+export async function buildPlaylistsZip(
+  groups: Map<string, KeyLookupResult[]>,
+  results: KeyLookupResult[]
+): Promise<Blob> {
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   for (const [key, songs] of groups) {
     zip.file(`${key}.csv`, `\uFEFF${buildPlaylistCsv(songs)}`);
   }
-  if (results.some((result) => result.status !== "classified")) {
+  if (results.some(result => result.status !== "classified")) {
     zip.file("revisar.csv", `\uFEFF${buildReviewCsv(results)}`);
   }
   zip.file("resumen.csv", `\uFEFF${buildSummaryCsv(results)}`);
-  downloadBlob(
-    "playlists-por-tonalidad.zip",
-    await zip.generateAsync({ type: "blob" }),
-  );
+  return zip.generateAsync({ type: "blob" });
 }

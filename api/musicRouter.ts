@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
-import { findCached, saveToCache, cachedRowToResult } from "./queries/songCache";
+import {
+  findCached,
+  saveToCache,
+  cachedRowToResult,
+} from "./queries/songCache";
 import { keyToSpanish } from "@contracts/keyMap";
 import { PITCH_NAMES, CAMELOT_MAJOR, CAMELOT_MINOR } from "./keyMaps";
 import { titleVariants, cleanArtist } from "./searchVariants";
@@ -31,7 +35,12 @@ const songSchema = z.object({
   album: z.string().max(512).nullish(),
   isrc: z.string().max(32).nullish(),
   platformUrl: z.string().max(1024).nullish(),
-  durationMs: z.number().int().positive().max(24 * 60 * 60 * 1000).nullish(),
+  durationMs: z
+    .number()
+    .int()
+    .positive()
+    .max(24 * 60 * 60 * 1000)
+    .nullish(),
   position: z.number().int().nonnegative().optional(),
 });
 
@@ -52,7 +61,8 @@ async function getSpotifyToken(): Promise<string> {
   if (!env.spotifyClientId || !env.spotifyClientSecret) {
     throw new Error("spotify_not_configured");
   }
-  if (spotifyToken && spotifyToken.expiresAt > Date.now() + 30_000) return spotifyToken.value;
+  if (spotifyToken && spotifyToken.expiresAt > Date.now() + 30_000)
+    return spotifyToken.value;
   if (tokenPromise) return tokenPromise;
   tokenPromise = (async () => {
     const response = await providerFetch(
@@ -62,15 +72,18 @@ async function getSpotifyToken(): Promise<string> {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           Authorization: `Basic ${Buffer.from(
-            `${env.spotifyClientId}:${env.spotifyClientSecret}`,
+            `${env.spotifyClientId}:${env.spotifyClientSecret}`
           ).toString("base64")}`,
         },
         body: "grant_type=client_credentials",
       },
-      { provider: "spotify" },
+      { provider: "spotify" }
     );
     if (!response.ok) throw new Error(`spotify_auth_${response.status}`);
-    const data = (await response.json()) as { access_token: string; expires_in: number };
+    const data = (await response.json()) as {
+      access_token: string;
+      expires_in: number;
+    };
     spotifyToken = {
       value: data.access_token,
       expiresAt: Date.now() + data.expires_in * 1000,
@@ -88,7 +101,7 @@ function toCandidate(track: SpotifyTrack): SpotifyTrackCandidate {
   return {
     spotifyId: track.id,
     title: track.name,
-    artists: track.artists.map((artist) => artist.name),
+    artists: track.artists.map(artist => artist.name),
     album: track.album?.name ?? null,
     isrc: track.external_ids?.isrc ?? null,
     durationMs: track.duration_ms ?? null,
@@ -96,18 +109,24 @@ function toCandidate(track: SpotifyTrack): SpotifyTrackCandidate {
   };
 }
 
-async function spotifyGetTrack(id: string, token: string): Promise<SpotifyTrackCandidate | null> {
+async function spotifyGetTrack(
+  id: string,
+  token: string
+): Promise<SpotifyTrackCandidate | null> {
   const response = await providerFetch(
     `${SPOTIFY_API}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(env.spotifyMarket)}`,
     { headers: { Authorization: `Bearer ${token}` } },
-    { provider: "spotify" },
+    { provider: "spotify" }
   );
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`spotify_track_${response.status}`);
   return toCandidate((await response.json()) as SpotifyTrack);
 }
 
-async function spotifySearch(query: string, token: string): Promise<SpotifyTrackCandidate[]> {
+async function spotifySearch(
+  query: string,
+  token: string
+): Promise<SpotifyTrackCandidate[]> {
   const url = new URL(`${SPOTIFY_API}/search`);
   url.searchParams.set("q", query);
   url.searchParams.set("type", "track");
@@ -116,10 +135,12 @@ async function spotifySearch(query: string, token: string): Promise<SpotifyTrack
   const response = await providerFetch(
     url,
     { headers: { Authorization: `Bearer ${token}` } },
-    { provider: "spotify" },
+    { provider: "spotify" }
   );
   if (!response.ok) throw new Error(`spotify_search_${response.status}`);
-  const data = (await response.json()) as { tracks?: { items?: SpotifyTrack[] } };
+  const data = (await response.json()) as {
+    tracks?: { items?: SpotifyTrack[] };
+  };
   return (data.tracks?.items ?? []).map(toCandidate);
 }
 
@@ -136,17 +157,33 @@ async function identifyTrack(song: SongInput): Promise<Identification> {
   if (directId) {
     const track = await spotifyGetTrack(directId, token);
     return track
-      ? { status: "accepted", track, confidence: 1, reasons: ["spotify_id_exact"] }
-      : { status: "not_found", track: null, confidence: null, reasons: ["spotify_id_not_found"] };
+      ? {
+          status: "accepted",
+          track,
+          confidence: 1,
+          reasons: ["spotify_id_exact"],
+        }
+      : {
+          status: "not_found",
+          track: null,
+          confidence: null,
+          reasons: ["spotify_id_not_found"],
+        };
   }
 
   if (song.isrc?.trim()) {
     const candidates = await spotifySearch(`isrc:${song.isrc.trim()}`, token);
     const exact = candidates.find(
-      (candidate) => candidate.isrc?.toUpperCase() === song.isrc?.trim().toUpperCase(),
+      candidate =>
+        candidate.isrc?.toUpperCase() === song.isrc?.trim().toUpperCase()
     );
     if (exact) {
-      return { status: "accepted", track: exact, confidence: 1, reasons: ["isrc_exact"] };
+      return {
+        status: "accepted",
+        track: exact,
+        confidence: 1,
+        reasons: ["isrc_exact"],
+      };
     }
   }
 
@@ -161,7 +198,12 @@ async function identifyTrack(song: SongInput): Promise<Identification> {
   const ranked = rankCandidates(song, [...byId.values()]);
   const best = ranked[0];
   if (!best) {
-    return { status: "not_found", track: null, confidence: null, reasons: ["no_catalogue_candidate"] };
+    return {
+      status: "not_found",
+      track: null,
+      confidence: null,
+      reasons: ["no_catalogue_candidate"],
+    };
   }
   if (isHighConfidenceMatch(best, ranked[1])) {
     return {
@@ -174,7 +216,8 @@ async function identifyTrack(song: SongInput): Promise<Identification> {
   const reasons = ["ambiguous_catalogue_match"];
   if (best.titleScore < 0.85) reasons.push("title_below_threshold");
   if (best.artistScore < 0.8) reasons.push("artist_below_threshold");
-  if (ranked[1] && best.score - ranked[1].score < 0.1) reasons.push("runner_up_too_close");
+  if (ranked[1] && best.score - ranked[1].score < 0.1)
+    reasons.push("runner_up_too_close");
   if (best.usedAggressiveTitleVariant) reasons.push("version_marker_removed");
   return {
     status: best.score >= 0.6 ? "review" : "not_found",
@@ -185,25 +228,33 @@ async function identifyTrack(song: SongInput): Promise<Identification> {
 }
 
 async function reccobeatsFeatures(
-  spotifyId: string,
-): Promise<{ keyOf: string; camelot: string | null; bpm: number | null } | null> {
+  spotifyId: string
+): Promise<{
+  keyOf: string;
+  camelot: string | null;
+  bpm: number | null;
+} | null> {
   const mapResponse = await providerFetch(
     `${RECCO_API}/track?ids=${encodeURIComponent(spotifyId)}`,
     {},
-    { provider: "reccobeats" },
+    { provider: "reccobeats" }
   );
-  if (!mapResponse.ok) throw new Error(`reccobeats_track_${mapResponse.status}`);
-  const mapping = (await mapResponse.json()) as { content?: Array<{ id: string }> };
+  if (!mapResponse.ok)
+    throw new Error(`reccobeats_track_${mapResponse.status}`);
+  const mapping = (await mapResponse.json()) as {
+    content?: Array<{ id: string }>;
+  };
   const internalId = mapping.content?.[0]?.id;
   if (!internalId) return null;
 
   const featureResponse = await providerFetch(
     `${RECCO_API}/track/${encodeURIComponent(internalId)}/audio-features`,
     {},
-    { provider: "reccobeats" },
+    { provider: "reccobeats" }
   );
   if (featureResponse.status === 404) return null;
-  if (!featureResponse.ok) throw new Error(`reccobeats_features_${featureResponse.status}`);
+  if (!featureResponse.ok)
+    throw new Error(`reccobeats_features_${featureResponse.status}`);
   const features = (await featureResponse.json()) as {
     key?: number;
     mode?: number;
@@ -227,7 +278,7 @@ async function reccobeatsFeatures(
 function baseResult(
   song: SongInput,
   status: ClassificationStatus,
-  options: Partial<KeyLookupResult> = {},
+  options: Partial<KeyLookupResult> = {}
 ): KeyLookupResult {
   return {
     inputId: song.id,
@@ -261,7 +312,7 @@ async function classifySong(song: SongInput): Promise<KeyLookupResult> {
           matchedTrack: identification.track,
           confidence: identification.confidence,
           reasonCodes: identification.reasons,
-        },
+        }
       );
       await saveToCache(song, result);
       return result;
@@ -290,9 +341,14 @@ async function classifySong(song: SongInput): Promise<KeyLookupResult> {
     await saveToCache(song, result);
     return result;
   } catch (error) {
-    const reason = error instanceof Error && error.message === "spotify_not_configured"
-      ? "spotify_not_configured"
-      : "provider_temporarily_unavailable";
+    const reason =
+      error instanceof Error && error.message === "spotify_not_configured"
+        ? "spotify_not_configured"
+        : "provider_temporarily_unavailable";
+    console.error("[classify_song_failed]", {
+      reason,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return baseResult(song, "error", { reasonCodes: [reason] });
   }
 }
