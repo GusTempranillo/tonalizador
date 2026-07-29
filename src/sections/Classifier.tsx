@@ -488,7 +488,7 @@ function WorkspaceHeader({
   );
 }
 
-function ExportChapter({ onContinue }: { onContinue: () => void }) {
+function ExportChapter({ onChooseCsv }: { onChooseCsv: () => void }) {
   return (
     <section
       className="chapter-stage export-stage"
@@ -501,8 +501,8 @@ function ExportChapter({ onContinue }: { onContinue: () => void }) {
         </p>
         <h2 id="export-title">Vamos a buscar tus canciones.</h2>
         <p className="stage-description">
-          Primero crea un archivo con tu playlist de YouTube Music. Te llevamos
-          al sitio que lo prepara.
+          Primero crea un archivo CSV con tu playlist de YouTube Music. Te
+          llevamos al sitio que lo prepara.
         </p>
 
         <div className="stage-actions">
@@ -516,8 +516,8 @@ function ExportChapter({ onContinue }: { onContinue: () => void }) {
               <ExternalLink aria-hidden="true" />
             </a>
           </Button>
-          <button type="button" className="text-action" onClick={onContinue}>
-            Ya tengo el archivo
+          <button type="button" className="text-action" onClick={onChooseCsv}>
+            Ya tengo el archivo CSV
             <ArrowRight aria-hidden="true" />
           </button>
         </div>
@@ -526,7 +526,7 @@ function ExportChapter({ onContinue }: { onContinue: () => void }) {
           <ShieldCheck aria-hidden="true" />
           <span>
             <strong>No necesitas configurar nada.</strong>
-            TuneMyMusic te guiará para guardar la playlist.
+            TuneMyMusic te guiará para guardar la playlist como archivo CSV.
           </span>
         </div>
       </div>
@@ -563,7 +563,7 @@ function ExportChapter({ onContinue }: { onContinue: () => void }) {
                 <FileOutput aria-hidden="true" />
               </span>
               <div>
-                <strong>Un archivo</strong>
+                <strong>Un archivo CSV</strong>
                 <small>Fácil de traer</small>
               </div>
               <span className="journey-number">01</span>
@@ -827,7 +827,6 @@ type AnalyzeChapterProps = {
   onDragOver: (event: DragEvent<HTMLButtonElement>) => void;
   onDragLeave: () => void;
   onDrop: (event: DragEvent<HTMLButtonElement>) => void;
-  onFile: (file: File) => void;
   onColumns: (columns: SongColumns) => void;
   onAnalyze: () => void;
   onAnalyzeAudio: (
@@ -858,7 +857,6 @@ function AnalyzeChapter({
   onDragOver,
   onDragLeave,
   onDrop,
-  onFile,
   onColumns,
   onAnalyze,
   onAnalyzeAudio,
@@ -1194,10 +1192,10 @@ function AnalyzeChapter({
         <p className="stage-kicker">
           <FileInput aria-hidden="true" /> Ya estamos en el segundo paso
         </p>
-        <h2>Ahora trae el archivo aquí.</h2>
+        <h2>Ahora trae el archivo CSV aquí.</h2>
         <p>
-          Elige el archivo que acabas de guardar y nosotros nos ocupamos de
-          entenderlo.
+          Elige el archivo CSV que acabas de guardar y nosotros nos ocupamos
+          de entenderlo.
         </p>
         <div className="upload-assurances">
           <span>
@@ -1221,22 +1219,10 @@ function AnalyzeChapter({
           <span className="upload-zone-icon">
             <Upload aria-hidden="true" />
           </span>
-          <strong>Elegir el archivo de mi playlist</strong>
+          <strong>Elegir el archivo CSV de mi playlist</strong>
           <span>También puedes arrastrarlo hasta aquí</span>
-          <small>El archivo suele terminar en .csv</small>
+          <small>Debe ser un archivo terminado en .csv</small>
         </button>
-        <input
-          ref={fileInput}
-          type="file"
-          accept=".csv,.txt,text/csv"
-          className="sr-only"
-          aria-label="Elegir el archivo exportado"
-          onChange={event => {
-            const file = event.target.files?.[0];
-            if (file) onFile(file);
-            event.target.value = "";
-          }}
-        />
         {error ? (
           <div className="friendly-error upload-error" role="alert">
             <AlertCircle aria-hidden="true" />
@@ -1784,7 +1770,26 @@ export default function Classifier() {
   const handleFile = useCallback(
     async (file: File) => {
       const requestId = ++fileReadId.current;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // The new file can still replace the in-memory session.
+      }
+      setParsed(null);
+      setColumns(null);
+      setSongs(null);
+      setResults([]);
+      setDuplicateCount(0);
+      setDuplicateSongs([]);
+      setProgress(null);
       setError(null);
+      setSaveWarning(false);
+      setFileName(file.name);
+      setDeliveryState("ready");
+      setDownloading(false);
+      setDownloadError(null);
+      setAcousticJobs({});
+      setReviewFilter("all");
       setChapter("analyze");
       setReadingFile(true);
       try {
@@ -1792,7 +1797,6 @@ export default function Classifier() {
         if (requestId !== fileReadId.current) return;
         setParsed(next);
         setColumns(next.columns);
-        setFileName(file.name);
         if (next.columns.title && next.columns.artist) {
           applyExtractedSongs(next, next.columns);
         } else {
@@ -2103,6 +2107,18 @@ export default function Classifier() {
       <div className="ambient ambient-one" aria-hidden="true" />
       <div className="ambient ambient-two" aria-hidden="true" />
       <div className="ambient-grid" aria-hidden="true" />
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".csv,text/csv,application/csv,application/vnd.ms-excel"
+        className="sr-only"
+        aria-label="Elegir el archivo CSV exportado"
+        onChange={event => {
+          const file = event.target.files?.[0];
+          if (file) void handleFile(file);
+          event.target.value = "";
+        }}
+      />
 
       <main className="app-main">
         <WorkspaceHeader
@@ -2125,7 +2141,7 @@ export default function Classifier() {
         >
           <div className="stage-transition" key={chapter}>
             {chapter === "export" ? (
-              <ExportChapter onContinue={() => setChapter("analyze")} />
+              <ExportChapter onChooseCsv={() => fileInput.current?.click()} />
             ) : chapter === "analyze" ? (
               <AnalyzeChapter
                 parsed={parsed}
@@ -2148,7 +2164,6 @@ export default function Classifier() {
                 }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
-                onFile={file => void handleFile(file)}
                 onColumns={applyColumns}
                 onAnalyze={() => void analyze()}
                 onAnalyzeAudio={(song, result, file) =>
