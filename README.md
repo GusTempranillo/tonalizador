@@ -49,15 +49,18 @@ El despliegue recomendado usa el repositorio de GitHub como fuente y ejecuta
 la aplicación y MariaDB en Docker dentro del VPS:
 
 ```bash
-cp .env.example .env
-# Rellenar DB_PASSWORD, DB_ROOT_PASSWORD y las dos claves de Spotify.
+./deploy/create-env.sh
+# Rellenar únicamente las dos claves de Spotify en .env.
 docker compose up -d --build
+sudo ./deploy/install-nginx.sh
 ```
 
 La aplicación solo publica `127.0.0.1:3010`; Nginx es el único punto de entrada.
 La configuración preparada para `tonalizador.xosemiguel.eu` está en
 `deploy/nginx.tonalizador.conf`. El servicio existente del puerto 3000 no se
-modifica.
+modifica. `create-env.sh` genera contraseñas aleatorias de MariaDB sin
+mostrarlas, y `install-nginx.sh` instala el virtual host y solicita el
+certificado de Let’s Encrypt de forma interactiva.
 
 ## Verificación
 
