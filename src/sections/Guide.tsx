@@ -23,7 +23,7 @@ type ChapterHelp = {
 
 const HELP: Record<Chapter, ChapterHelp> = {
   export: {
-    eyebrow: "Exportar",
+    eyebrow: "Importar",
     title: "Trae tus canciones",
     instructions: [
       "Pulsa «Abrir TuneMyMusic». Se abrirá otra página sin cerrar Tonalizador.",

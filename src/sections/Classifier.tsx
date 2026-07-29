@@ -255,7 +255,7 @@ const NAV_ITEMS: Array<{
 }> = [
   {
     id: "export",
-    label: "Exportar",
+    label: "Importar",
     description: "Trae tus canciones",
     icon: FileOutput,
   },
