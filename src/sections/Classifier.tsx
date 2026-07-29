@@ -337,6 +337,57 @@ function HomeHero({
             />
           ))}
         </nav>
+
+        <div className="home-mobile-hero">
+          <div className="home-mobile-brand" aria-hidden="true">
+            <span>
+              <AudioLines />
+            </span>
+            <strong>
+              tonalizador<i>.</i>
+            </strong>
+          </div>
+
+          <div className="home-mobile-copy" aria-hidden="true">
+            <p>Tu música,</p>
+            <strong>ordenada por tonalidad.</strong>
+          </div>
+
+          <nav
+            className="home-mobile-step-nav"
+            aria-label="Pasos principales"
+          >
+            {NAV_ITEMS.map(item => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={[
+                    "home-mobile-step",
+                    `is-${item.id}`,
+                    chapter === item.id ? "is-active" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  aria-label={`Ir a ${item.label}`}
+                  aria-current={chapter === item.id ? "step" : undefined}
+                  onClick={() => onSelect(item.id)}
+                >
+                  <span aria-hidden="true">
+                    <Icon />
+                  </span>
+                  <strong>{item.label}</strong>
+                </button>
+              );
+            })}
+          </nav>
+
+          <p className="home-mobile-hint">
+            Elige un paso para empezar
+            <ArrowRight aria-hidden="true" />
+          </p>
+        </div>
       </section>
     </main>
   );
