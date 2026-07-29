@@ -47,10 +47,10 @@ const HELP: Record<Chapter, ChapterHelp> = {
       "Pulsa «Analizar mis canciones». Puedes dejar que termine; el progreso se guarda automáticamente en este navegador.",
       "Cuando acabe, revisa la tonalidad mostrada junto a cada canción. Spotify identifica la canción y ReccoBeats proporciona la tonalidad y los BPM.",
       "Si una canción de la playlist queda sin tonalidad o el resultado no es suficientemente fiable, pulsa «Analizar audio» junto a ella y selecciona su MP3, M4A, WAV, FLAC, OGG o AAC.",
-      "También puedes analizar una canción sin importar una playlist: pulsa «Elegir un MP3 de mi dispositivo», selecciona el archivo y espera a que aparezcan la tonalidad y los BPM.",
+      "También puedes analizar una canción sin importar una playlist: pulsa «Elegir un MP3 de mi dispositivo», selecciona el archivo y espera a que aparezcan la tonalidad y los BPM. Tonalizador analiza la canción completa, por lo que en un móvil puede tardar varios minutos y consumir más batería.",
     ],
     reason:
-      "Con una playlist, la herramienta lee los títulos y artistas del CSV. Spotify identifica cada canción y ayuda a confirmar que se trata de la grabación correcta; después, ReccoBeats proporciona la tonalidad y los BPM. En los resultados lo resumimos así: «Spotify identificó la canción. Tonalidad obtenida de ReccoBeats». Cuando seleccionas un MP3 u otro archivo de audio, el proceso es diferente: Tonalizador decodifica una parte del audio y calcula localmente su tonalidad y sus BPM. El archivo no se envía al servidor, no sale del dispositivo y no se conserva.",
+      "Con una playlist, la herramienta lee los títulos y artistas del CSV. Spotify identifica cada canción y ayuda a confirmar que se trata de la grabación correcta; después, ReccoBeats proporciona la tonalidad y los BPM. En los resultados lo resumimos así: «Spotify identificó la canción. Tonalidad obtenida de ReccoBeats». Cuando seleccionas un MP3 u otro archivo de audio, el proceso es diferente: Tonalizador decodifica y analiza el archivo completo, de principio a fin, y combina la información tonal de todos sus tramos para calcular localmente la tonalidad y los BPM. El archivo no se envía al servidor, no sale del dispositivo y no se conserva.",
     analogy:
       "El CSV es como una lista con los nombres de varios libros; el MP3 es como entregar directamente un libro para examinarlo. En ambos casos obtenemos una clasificación, pero solo el segundo permite analizar el contenido real del archivo.",
   },

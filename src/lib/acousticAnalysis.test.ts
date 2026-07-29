@@ -29,14 +29,15 @@ describe("análisis acústico local", () => {
       keySpanish: "Do Mayor",
       camelot: "8B",
       algorithm: ACOUSTIC_ALGORITHM,
-      segments: 3,
+      segments: 5,
     });
     expect(result.confidence).toBeGreaterThan(0.55);
     expect(result.bpm).not.toBeNull();
     expect(result.bpm ?? 0).toBeGreaterThanOrEqual(116);
     expect(result.bpm ?? 0).toBeLessThanOrEqual(124);
-    expect(result.windows).toHaveLength(3);
+    expect(result.windows).toHaveLength(5);
     expect(result.explanation.privacy).toContain("No se ha subido");
+    expect(result.explanation.selection).toContain("canción completa");
     expect(progress[0]).toBe(0);
     expect(progress.at(-1)).toBe(1);
   });
@@ -81,22 +82,26 @@ describe("análisis acústico local", () => {
     expect(result.keySpanish).toBe("Re Mayor");
   });
 
-  it("selecciona fragmentos acotados de un audio largo", async () => {
+  it("analiza el audio completo en tramos contiguos", async () => {
     const buffer = synthesizeChord({
       frequencies: [196, 246.9417, 293.6648],
       amplitudes: [0.5, 0.3, 0.25],
-      durationSeconds: 40,
+      durationSeconds: 16,
       sampleRate: 8_000,
     });
 
-    const result = await analyzeAudioBuffer(buffer, {
-      maxAnalysisSeconds: 6,
-    });
+    const result = await analyzeAudioBuffer(buffer);
 
-    expect(result.segments).toBe(3);
-    expect(result.analyzedSeconds).toBeCloseTo(6, 1);
-    expect(result.windows[0].startSeconds).toBeGreaterThan(0);
-    expect(result.windows[2].endSeconds).toBeLessThanOrEqual(40);
+    expect(result.segments).toBe(5);
+    expect(result.analyzedSeconds).toBeCloseTo(16, 1);
+    expect(result.windows[0].startSeconds).toBe(0);
+    expect(result.windows.at(-1)?.endSeconds).toBeCloseTo(16, 1);
+    for (let index = 1; index < result.windows.length; index++) {
+      expect(result.windows[index].startSeconds).toBeCloseTo(
+        result.windows[index - 1].endSeconds,
+        1
+      );
+    }
   });
 
   it("rechaza silencio, duración, memoria y archivo fuera de límite", async () => {

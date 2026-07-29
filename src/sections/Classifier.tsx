@@ -797,7 +797,9 @@ function AnalysisSongRow({
               {job.analyzedSeconds
                 ? ` · ${Math.round(job.analyzedSeconds)} s analizados`
                 : ""}
-              {job.segments ? ` · ${job.segments} fragmentos` : ""}
+              {job.segments
+                ? ` · Canción completa en ${job.segments} tramos`
+                : ""}
               {job.windows?.length
                 ? ` · Tramos: ${job.windows
                     .map(
@@ -847,7 +849,8 @@ function AnalysisSongRow({
             </label>
             <p>
               <Clock3 aria-hidden="true" />
-              Tarda más. Se calcula aquí y el audio no sale del navegador.
+              Analiza la canción completa. Puede tardar varios minutos y el
+              audio no sale del navegador.
             </p>
             {job?.state === "error" ? (
               <span className="acoustic-error" role="alert">
@@ -1037,7 +1040,7 @@ function AnalyzeChapter({
               </h2>
               <p>
                 {analyzingAudio
-                  ? "Calculamos la tonalidad y los BPM directamente desde el archivo. Puede tardar unos segundos."
+                  ? "Analizamos el archivo completo de principio a fin para calcular la tonalidad y los BPM. En móvil puede tardar varios minutos."
                   : reliable
                     ? "El resultado se ha calculado directamente a partir del archivo de tu dispositivo."
                     : failed

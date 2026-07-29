@@ -1,14 +1,13 @@
 import { KEY_OPTIONS, keyToCamelot, keyToSpanish } from "@contracts/keyMap";
 
-export const ACOUSTIC_ALGORITHM = "local_hpcp_v1";
+export const ACOUSTIC_ALGORITHM = "local_hpcp_v2_full";
 
 const DEFAULTS = {
   maxFileBytes: 64 * 1024 * 1024,
   maxDecodedBytes: 384 * 1024 * 1024,
   maxDurationSeconds: 15 * 60,
-  maxAnalysisSeconds: 60,
-  maxProcessingMs: 15_000,
-  segmentCount: 3,
+  maxProcessingMs: 10 * 60_000,
+  segmentCount: 5,
   targetSampleRate: 11_025,
 } as const;
 
@@ -60,7 +59,6 @@ export interface AcousticAnalysisOptions {
   maxFileBytes?: number;
   maxDecodedBytes?: number;
   maxDurationSeconds?: number;
-  maxAnalysisSeconds?: number;
   maxProcessingMs?: number;
   segmentCount?: number;
   targetSampleRate?: number;
@@ -112,7 +110,6 @@ interface ResolvedOptions {
   maxFileBytes: number;
   maxDecodedBytes: number;
   maxDurationSeconds: number;
-  maxAnalysisSeconds: number;
   maxProcessingMs: number;
   segmentCount: number;
   targetSampleRate: number;
@@ -188,17 +185,11 @@ function resolveOptions(options: AcousticAnalysisOptions): ResolvedOptions {
       1,
       60 * 60
     ),
-    maxAnalysisSeconds: finiteOption(
-      options.maxAnalysisSeconds,
-      DEFAULTS.maxAnalysisSeconds,
-      3,
-      180
-    ),
     maxProcessingMs: finiteOption(
       options.maxProcessingMs,
       DEFAULTS.maxProcessingMs,
       1,
-      120_000
+      15 * 60_000
     ),
     segmentCount: Math.round(
       finiteOption(options.segmentCount, DEFAULTS.segmentCount, 1, 5)
@@ -320,7 +311,8 @@ export async function analyzeAudioFile(
 
 /**
  * Analiza un AudioBuffer ya decodificado. El buffer recibido no se modifica ni
- * se conserva; únicamente se crean fragmentos mono acotados que se limpian.
+ * se conserva; únicamente se crean tramos mono contiguos que cubren la canción
+ * completa y se limpian al terminar.
  */
 export async function analyzeAudioBuffer(
   buffer: AudioBuffer,
@@ -336,9 +328,8 @@ export async function analyzeAudioBuffer(
   reportProgress(resolved, 0);
 
   const durationSeconds = buffer.length / buffer.sampleRate;
-  const segments = selectRepresentativeSegments(
+  const segments = selectCompleteSegments(
     durationSeconds,
-    resolved.maxAnalysisSeconds,
     resolved.segmentCount
   );
   const channels = Array.from(
@@ -374,7 +365,7 @@ export async function analyzeAudioBuffer(
     if (combined.acceptedFrames < 2 || sum(combined.chroma) <= 0) {
       throw new AcousticAnalysisError(
         "ACOUSTIC_SIGNAL_INSUFFICIENT",
-        "El fragmento no contiene suficiente información tonal."
+        "El audio no contiene suficiente información tonal."
       );
     }
 
@@ -442,17 +433,14 @@ export async function analyzeAudioBuffer(
         privacy:
           "El audio se ha decodificado y analizado en este navegador. No se ha subido ni se conserva.",
         selection:
-          segments.length === 1
-            ? `Se ha analizado un fragmento de ${round(
-                analyzedSeconds,
-                1
-              )} segundos.`
-            : `Se han analizado ${segments.length} fragmentos representativos (inicio útil, zona central y tramo final), ${round(
-                analyzedSeconds,
-                1
-              )} segundos en total.`,
+          `Se ha analizado la canción completa, de principio a fin: ${round(
+            analyzedSeconds,
+            1
+          )} segundos repartidos en ${segments.length} ${
+            segments.length === 1 ? "tramo" : "tramos contiguos"
+          }.`,
         tonalMethod:
-          "Cada fragmento se mezcla a mono, se remuestrea y se transforma en un perfil cromático de 12 notas. Ese perfil se compara con modelos tonales de tonalidad mayor y menor.",
+          "Cada tramo se mezcla a mono, se remuestrea y se transforma en un perfil cromático de 12 notas. Los perfiles de toda la canción se combinan y se comparan con modelos tonales de tonalidad mayor y menor.",
         tempoMethod:
           tempo.bpm === null
             ? "No se ha mostrado BPM porque el patrón de ataques no era suficientemente estable."
@@ -460,7 +448,7 @@ export async function analyzeAudioBuffer(
                 (tempo.confidence ?? 0) * 100
               )} %.`,
         confidence: isReliable
-          ? `Los fragmentos coinciden y la confianza tonal es del ${Math.round(
+          ? `Los tramos de la canción coinciden y la confianza tonal es del ${Math.round(
               confidence * 100
             )} %.`
           : `El resultado es orientativo: la confianza tonal es del ${Math.round(
@@ -519,44 +507,24 @@ function validateAudioBuffer(
   }
 }
 
-function selectRepresentativeSegments(
+function selectCompleteSegments(
   durationSeconds: number,
-  maxAnalysisSeconds: number,
   requestedCount: number
 ): Segment[] {
-  const analyzedSeconds = Math.min(durationSeconds, maxAnalysisSeconds);
   const count =
     durationSeconds < 12 || requestedCount === 1 ? 1 : requestedCount;
   if (count === 1) {
-    const startSeconds = Math.max(0, (durationSeconds - analyzedSeconds) / 2);
-    return [{ startSeconds, durationSeconds: analyzedSeconds }];
+    return [{ startSeconds: 0, durationSeconds }];
   }
 
-  const segmentDuration = analyzedSeconds / count;
-  if (durationSeconds <= maxAnalysisSeconds) {
-    return Array.from({ length: count }, (_, index) => ({
-      startSeconds: index * segmentDuration,
-      durationSeconds:
-        index === count - 1
-          ? durationSeconds - index * segmentDuration
-          : segmentDuration,
-    }));
-  }
-
-  const firstCenter = 0.18;
-  const lastCenter = 0.82;
-  return Array.from({ length: count }, (_, index) => {
-    const ratio =
-      count === 1
-        ? 0.5
-        : firstCenter + ((lastCenter - firstCenter) * index) / (count - 1);
-    const startSeconds = clamp(
-      durationSeconds * ratio - segmentDuration / 2,
-      0,
-      durationSeconds - segmentDuration
-    );
-    return { startSeconds, durationSeconds: segmentDuration };
-  });
+  const segmentDuration = durationSeconds / count;
+  return Array.from({ length: count }, (_, index) => ({
+    startSeconds: index * segmentDuration,
+    durationSeconds:
+      index === count - 1
+        ? durationSeconds - index * segmentDuration
+        : segmentDuration,
+  }));
 }
 
 function downmixAndResample(
