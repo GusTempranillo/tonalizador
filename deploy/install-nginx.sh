@@ -25,4 +25,6 @@ fi
 
 certbot --nginx --domain tonalizador.xosemiguel.eu --redirect
 
+"${project_dir}/deploy/activate-nginx.sh"
+
 echo "Nginx and HTTPS are ready for https://tonalizador.xosemiguel.eu/"

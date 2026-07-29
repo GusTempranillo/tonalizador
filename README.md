@@ -60,7 +60,9 @@ La configuración preparada para `tonalizador.xosemiguel.eu` está en
 `deploy/nginx.tonalizador.conf`. El servicio existente del puerto 3000 no se
 modifica. `create-env.sh` genera contraseñas aleatorias de MariaDB sin
 mostrarlas, y `install-nginx.sh` instala el virtual host y solicita el
-certificado de Let’s Encrypt de forma interactiva.
+certificado de Let’s Encrypt de forma interactiva. La configuración HTTPS se
+vincula solo a la IP pública para convivir con Tailscale, que ya utiliza el
+puerto 443 de su interfaz privada.
 
 ## Verificación
 
