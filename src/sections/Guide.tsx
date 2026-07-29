@@ -26,44 +26,46 @@ const HELP: Record<Chapter, ChapterHelp> = {
     eyebrow: "Exportar",
     title: "Trae tus canciones",
     instructions: [
-      "Abre TuneMyMusic.",
-      "Elige YouTube Music como origen.",
-      "Selecciona la playlist que quieres ordenar.",
-      "Guárdala como archivo y vuelve aquí.",
+      "Pulsa «Abrir TuneMyMusic». Se abrirá otra página sin cerrar Tonalizador.",
+      "En TuneMyMusic, elige YouTube Music como servicio de origen y sigue sus indicaciones para acceder a tus playlists.",
+      "Selecciona únicamente la playlist que quieres ordenar por tonalidad.",
+      "Elige exportarla a un archivo y selecciona el formato CSV. El archivo se guardará normalmente en la carpeta Descargas de tu dispositivo.",
+      "Vuelve a Tonalizador, pulsa «Ya tengo el archivo CSV» y elige el archivo que acabas de guardar.",
     ],
     reason:
-      "Para ordenar tu música, primero necesitamos una lista con los títulos y los artistas. Tu archivo se queda en este navegador.",
+      "La herramienta necesita saber qué canciones contiene tu playlist. El archivo CSV funciona como una lista: incluye datos como el título y el artista, pero no contiene la música ni modifica la playlist original. Tonalizador lee ese archivo en tu navegador para preparar las canciones que se analizarán.",
     analogy:
-      "Es como ordenar una biblioteca: antes de colocar los libros por temas, necesitamos saber cuáles hay.",
+      "Es como entregar el índice de una biblioteca: antes de ordenar los libros por categorías, necesitamos una lista de los títulos que hay.",
   },
   analyze: {
     eyebrow: "Analizar",
-    title: "Busca la tonalidad real",
+    title: "Identifica la tonalidad",
     instructions: [
-      "Suelta aquí el archivo que acabas de guardar.",
-      "Comprueba cuántas canciones hemos encontrado.",
-      "Pulsa «Analizar canciones».",
-      "Consulta la tonalidad y la fuente junto a cada canción.",
-      "Si una queda sin tonalidad o es dudosa, decide si quieres analizar su archivo de audio.",
+      "Pulsa «Elegir el archivo CSV de mi playlist» y busca en tu dispositivo el archivo terminado en .csv que guardaste con TuneMyMusic.",
+      "Comprueba el nombre del archivo y el número de canciones encontradas. Si no es la playlist correcta, puedes elegir otro archivo antes de continuar.",
+      "Pulsa «Analizar mis canciones». Puedes dejar que termine; el progreso se guarda automáticamente en este navegador.",
+      "Cuando acabe, revisa la tonalidad mostrada junto a cada canción. También indicamos de dónde procede el dato y si necesita tu atención.",
+      "Si una canción queda sin tonalidad o el resultado no es suficientemente fiable, no la colocamos automáticamente en una lista incorrecta. Puedes corregirla manualmente o analizar un archivo de audio que tengas en tu dispositivo.",
     ],
     reason:
-      "Primero comprobamos una caché vigente. Después probamos Spotify Audio Features, cuando está disponible, y ReccoBeats. Si ninguna fuente da una tonalidad fiable, no inventamos el resultado: te ofrecemos analizar solo esa canción a partir del archivo de audio que tú elijas.",
+      "La herramienta lee los títulos y artistas del CSV, busca cada grabación en servicios de información musical e intenta obtener una tonalidad fiable. Después agrupa las canciones que tienen un resultado claro y separa las dudosas para que puedas revisarlas. Si eliges analizar un archivo de audio, ese análisis se realiza solamente en tu navegador.",
     analogy:
-      "El análisis acústico tarda más, se ejecuta en este navegador y solo comienza si tú lo pides. El archivo de audio no se sube ni se conserva.",
+      "Es parecido a clasificar documentos: los que están claramente identificados se guardan en su carpeta y los que ofrecen dudas se dejan aparte para revisarlos. Los archivos de audio opcionales no se suben ni se conservan.",
   },
   download: {
     eyebrow: "Descargar",
     title: "Recoge tus nuevas listas",
     instructions: [
-      "Comprueba el resumen.",
-      "Pulsa «Descargar todas las listas».",
-      "Descomprime el archivo que recibirás.",
-      "Importa cada lista de nuevo en YouTube Music.",
+      "Comprueba el resumen: verás cuántas canciones están clasificadas y cuántas necesitan revisión.",
+      "Si hay canciones dudosas, revísalas antes de descargar o guarda su lista aparte para corregirlas más tarde.",
+      "Pulsa «Descargar todas las listas». Recibirás un archivo llamado playlists-por-tonalidad.zip.",
+      "Abre o descomprime el archivo ZIP. Dentro encontrarás un CSV por cada tonalidad, un resumen general y, si hace falta, un archivo con las canciones pendientes de revisar.",
+      "Importa en YouTube Music los CSV de las tonalidades que quieras utilizar. Puedes hacerlo con TuneMyMusic siguiendo el proceso inverso al del primer paso.",
     ],
     reason:
-      "Creamos una lista independiente por cada tonalidad, manteniendo el orden original de tus canciones.",
+      "La herramienta separa las canciones clasificadas en varios archivos CSV: uno por cada tonalidad. Dentro de cada archivo mantiene el orden en el que aparecían las canciones en la playlist original. El ZIP sirve para descargar todas esas listas juntas de una sola vez.",
     analogy:
-      "Es como recibir varias cajas ya etiquetadas: solo tienes que guardarlas donde prefieras.",
+      "Es como recibir varias cajas ya etiquetadas y una hoja con el resumen: cada caja contiene las canciones de una tonalidad y tú decides cuáles quieres volver a guardar en YouTube Music.",
   },
 };
 
@@ -154,7 +156,7 @@ export default function Guide({
             onClick={() => setMode("instructions")}
           >
             <ListChecks aria-hidden="true" />
-            Qué tengo que hacer
+            ¿Qué tienes que hacer?
           </button>
           <button
             id="help-tab-reason"
@@ -166,7 +168,7 @@ export default function Guide({
             onClick={() => setMode("reason")}
           >
             <Lightbulb aria-hidden="true" />
-            Por qué lo hacemos
+            ¿Qué hace la herramienta?
           </button>
         </div>
 
