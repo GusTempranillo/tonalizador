@@ -54,6 +54,12 @@ type SpotifyTrack = {
   external_urls?: { spotify?: string };
 };
 
+type TonalFeatures = {
+  keyOf: string;
+  camelot: string | null;
+  bpm: number | null;
+};
+
 let spotifyToken: { value: string; expiresAt: number } | null = null;
 let tokenPromise: Promise<string> | null = null;
 
@@ -109,6 +115,26 @@ function toCandidate(track: SpotifyTrack): SpotifyTrackCandidate {
   };
 }
 
+function normalizeFeatures(features: {
+  key?: number;
+  mode?: number;
+  tempo?: number;
+}): TonalFeatures | null {
+  if (
+    features.key === undefined ||
+    features.key < 0 ||
+    features.key >= PITCH_NAMES.length
+  ) {
+    return null;
+  }
+  const minor = features.mode === 0;
+  return {
+    keyOf: `${PITCH_NAMES[features.key]}${minor ? "m" : ""}`,
+    camelot: (minor ? CAMELOT_MINOR : CAMELOT_MAJOR)[features.key] ?? null,
+    bpm: features.tempo ? Math.round(features.tempo) : null,
+  };
+}
+
 async function spotifyGetTrack(
   id: string,
   token: string
@@ -142,6 +168,27 @@ async function spotifySearch(
     tracks?: { items?: SpotifyTrack[] };
   };
   return (data.tracks?.items ?? []).map(toCandidate);
+}
+
+async function spotifyAudioFeatures(
+  spotifyId: string
+): Promise<TonalFeatures | null> {
+  const token = await getSpotifyToken();
+  const response = await providerFetch(
+    `${SPOTIFY_API}/audio-features/${encodeURIComponent(spotifyId)}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+    { provider: "spotify" }
+  );
+
+  // Spotify restricts this endpoint for some newer applications. In that case,
+  // continue with the catalogue fallback instead of failing the whole song.
+  if ([401, 403, 404].includes(response.status)) return null;
+  if (!response.ok)
+    throw new Error(`spotify_audio_features_${response.status}`);
+
+  return normalizeFeatures(
+    (await response.json()) as { key?: number; mode?: number; tempo?: number }
+  );
 }
 
 type Identification = {
@@ -229,11 +276,7 @@ async function identifyTrack(song: SongInput): Promise<Identification> {
 
 async function reccobeatsFeatures(
   spotifyId: string
-): Promise<{
-  keyOf: string;
-  camelot: string | null;
-  bpm: number | null;
-} | null> {
+): Promise<TonalFeatures | null> {
   const mapResponse = await providerFetch(
     `${RECCO_API}/track?ids=${encodeURIComponent(spotifyId)}`,
     {},
@@ -255,24 +298,24 @@ async function reccobeatsFeatures(
   if (featureResponse.status === 404) return null;
   if (!featureResponse.ok)
     throw new Error(`reccobeats_features_${featureResponse.status}`);
-  const features = (await featureResponse.json()) as {
-    key?: number;
-    mode?: number;
-    tempo?: number;
-  };
-  if (
-    features.key === undefined ||
-    features.key < 0 ||
-    features.key >= PITCH_NAMES.length
-  ) {
-    return null;
-  }
-  const minor = features.mode === 0;
-  return {
-    keyOf: `${PITCH_NAMES[features.key]}${minor ? "m" : ""}`,
-    camelot: (minor ? CAMELOT_MINOR : CAMELOT_MAJOR)[features.key] ?? null,
-    bpm: features.tempo ? Math.round(features.tempo) : null,
-  };
+
+  // ReccoBeats has removed key/mode from some responses. Keep compatibility
+  // with catalogue entries that still provide them, but do not depend on it.
+  return normalizeFeatures(
+    (await featureResponse.json()) as {
+      key?: number;
+      mode?: number;
+      tempo?: number;
+    }
+  );
+}
+
+async function getTonalFeatures(
+  spotifyId: string
+): Promise<TonalFeatures | null> {
+  const spotifyFeatures = await spotifyAudioFeatures(spotifyId);
+  if (spotifyFeatures) return spotifyFeatures;
+  return reccobeatsFeatures(spotifyId);
 }
 
 function baseResult(
@@ -318,7 +361,7 @@ async function classifySong(song: SongInput): Promise<KeyLookupResult> {
       return result;
     }
 
-    const features = await reccobeatsFeatures(identification.track.spotifyId);
+    const features = await getTonalFeatures(identification.track.spotifyId);
     if (!features) {
       const result = baseResult(song, "review", {
         matchedTrack: identification.track,
