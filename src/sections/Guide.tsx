@@ -1,282 +1,337 @@
 import { useState, type ReactNode } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import type { LucideIcon } from "lucide-react";
 import {
-  Info,
-  FileDown,
-  UploadCloud,
-  ListMusic,
-  LifeBuoy,
-  ExternalLink,
   ArrowLeft,
   ArrowRight,
+  Check,
+  CircleHelp,
+  Clock3,
+  Download,
+  ExternalLink,
+  FileDown,
+  FileUp,
+  Info,
+  Lightbulb,
+  ListMusic,
+  Play,
+  ShieldCheck,
+  Sparkles,
+  UploadCloud,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-function Note({ children }: { children: ReactNode }) {
+type Step = {
+  label: string;
+  short: string;
+  title: string;
+  description: string;
+  time: string;
+  icon: LucideIcon;
+};
+
+const STEPS: Step[] = [
+  {
+    label: "El plan",
+    short: "Qué vas a hacer",
+    title: "Tres movimientos y listo",
+    description: "Exporta, analiza y recupera tu música ordenada.",
+    time: "2 min de lectura",
+    icon: Sparkles,
+  },
+  {
+    label: "Exportar",
+    short: "Obtén tu CSV",
+    title: "Saca tu música de YouTube",
+    description: "Convierte una playlist en un archivo que podamos leer.",
+    time: "5–10 min",
+    icon: FileDown,
+  },
+  {
+    label: "Analizar",
+    short: "Clasifica aquí",
+    title: "Deja que hagamos la parte difícil",
+    description: "Sube el CSV y recibe tonalidad, Camelot y BPM.",
+    time: "Unos minutos",
+    icon: UploadCloud,
+  },
+  {
+    label: "Crear",
+    short: "Nuevas playlists",
+    title: "Devuelve cada tono a su lugar",
+    description: "Descarga los grupos e impórtalos de nuevo.",
+    time: "5 min",
+    icon: ListMusic,
+  },
+  {
+    label: "Resolver",
+    short: "Casos especiales",
+    title: "Revisa solo lo imprescindible",
+    description: "Una salida clara para canciones raras o no encontradas.",
+    time: "Cuando haga falta",
+    icon: CircleHelp,
+  },
+];
+
+function Callout({
+  children,
+  kind = "default",
+}: {
+  children: ReactNode;
+  kind?: "default" | "tip" | "note";
+}) {
+  const Icon = kind === "tip" ? Lightbulb : kind === "note" ? Info : ShieldCheck;
   return (
-    <div className="bg-[#fff9e6] border-l-4 border-[#ffcc00] rounded-r-xl p-3.5 text-[13px] text-[#5c4b00] mt-3">
-      {children}
+    <div className={`guide-callout ${kind === "tip" ? "is-tip" : kind === "note" ? "is-note" : ""}`}>
+      <Icon aria-hidden="true" />
+      <span>{children}</span>
     </div>
   );
 }
 
-function Tip({ children }: { children: ReactNode }) {
+function GuideCard({
+  icon: Icon,
+  title,
+  children,
+  wide = false,
+}: {
+  icon: LucideIcon;
+  title: string;
+  children: ReactNode;
+  wide?: boolean;
+}) {
   return (
-    <div className="bg-[#e8f5e9] border-l-4 border-[#34c759] rounded-r-xl p-3.5 text-[13px] text-[#1b5e20] mt-3">
-      {children}
-    </div>
-  );
-}
-
-function ExtLink({ href, children, dark = true }: { href: string; children: ReactNode; dark?: boolean }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener"
-      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium mt-3 transition-opacity hover:opacity-85 ${
-        dark ? "bg-[#1c1c1e] text-white" : "bg-white text-[#1c1c1e] border border-[#d1d1d6]"
-      }`}
-    >
-      <ExternalLink className="w-4 h-4" /> {children}
-    </a>
-  );
-}
-
-function StepCard({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
-  return (
-    <Card className="p-5 rounded-2xl border-[#e5e5ea] shadow-sm mb-4">
-      <h2 className="flex items-center gap-2.5 text-[15px] font-semibold text-[#1c1c1e] mb-3">
-        <span className="text-[#1c1c1e]">{icon}</span> {title}
-      </h2>
-      <div className="text-[14px] leading-relaxed text-[#3a3a3c] [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_p]:mb-2.5">
-        {children}
+    <Card className={`guide-card ${wide ? "is-wide" : ""}`}>
+      <div className="guide-card-heading">
+        <span><Icon aria-hidden="true" /></span>
+        <h4>{title}</h4>
       </div>
+      <div className="guide-body">{children}</div>
     </Card>
   );
 }
 
-const STEPS = [
-  { label: "1. Cómo funciona", icon: <Info className="w-5 h-5" /> },
-  { label: "2. Exporta tu música", icon: <FileDown className="w-5 h-5" /> },
-  { label: "3. Analiza aquí", icon: <UploadCloud className="w-5 h-5" /> },
-  { label: "4. Crea las playlists", icon: <ListMusic className="w-5 h-5" /> },
-  { label: "5. Si algo falla", icon: <LifeBuoy className="w-5 h-5" /> },
-];
+function ExternalButton({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Button asChild variant="outline" className="mt-4">
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        {children}
+        <ExternalLink aria-hidden="true" />
+      </a>
+    </Button>
+  );
+}
 
 export default function Guide({ goToClassifier }: { goToClassifier: () => void }) {
   const [step, setStep] = useState(0);
+  const activeStep = STEPS[step];
+  const ActiveIcon = activeStep.icon;
 
   return (
-    <div>
-      {/* Barra de progreso */}
-      <div className="h-1.5 bg-[#e5e5ea] rounded-full mb-4 overflow-hidden">
-        <div
-          className="h-full bg-[#1c1c1e] rounded-full transition-all"
-          style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-        />
-      </div>
-
-      {/* Navegación por pasos */}
-      <div
-        className="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-5"
-        role="tablist"
-        aria-label="Pasos de la guía"
-      >
-        {STEPS.map((s, i) => (
+    <div className="guide-shell">
+      <div className="guide-rail" role="tablist" aria-label="Pasos de la guía">
+        {STEPS.map((item, index) => (
           <button
-            key={i}
+            key={item.label}
+            id={`guide-tab-${index}`}
+            type="button"
             role="tab"
-            aria-selected={i === step}
-            aria-controls={`guide-step-${i}`}
-            onClick={() => setStep(i)}
-            className={`min-h-11 px-3 py-2 rounded-xl text-[12px] leading-tight font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1c1c1e] ${
-              i === step
-                ? "bg-[#1c1c1e] text-white border-[#1c1c1e]"
-                : "bg-white text-[#6e6e73] border-[#d1d1d6] hover:bg-[#f2f2f7]"
-            }`}
+            aria-selected={index === step}
+            aria-controls={`guide-step-${index}`}
+            className={`guide-step ${index === step ? "is-active" : ""} ${index < step ? "is-complete" : ""}`}
+            onClick={() => setStep(index)}
           >
-            {s.label}
+            <span className="guide-step-number" aria-hidden="true">
+              {index < step ? <Check className="h-3 w-3" /> : String(index + 1).padStart(2, "0")}
+            </span>
+            <span className="guide-step-label">
+              <strong>{item.label}</strong>
+              <small>{item.short}</small>
+            </span>
           </button>
         ))}
+        <div className="guide-progress" aria-hidden="true">
+          <span style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+        </div>
       </div>
 
-      <div id={`guide-step-${step}`} role="tabpanel">
-      {step === 0 && (
-        <>
-          <StepCard icon={<Info className="w-5 h-5" />} title="¿Qué vamos a hacer?">
-            <p>
-              Vamos a ordenar tus canciones de <strong>YouTube Music</strong> en playlists según su{" "}
-              <strong>tonalidad</strong> (Do Mayor, La menor…). Esta página lo hace <strong>casi todo sola</strong>:
-            </p>
-            <ol>
-              <li>Sacas la lista de tus canciones con una web gratuita (TuneMyMusic).</li>
-              <li>La subes aquí y esta página averigua la tonalidad de todas de golpe.</li>
-              <li>Descargas las listas ya separadas por tonalidad y las conviertes en playlists de YouTube Music con otro par de clics.</li>
-            </ol>
-            <Note>
-              <strong>La primera vez</strong> tardarás unos 15-20 minutos. Las siguientes veces
-              (cuando añadas canciones nuevas) serán 5 minutos, porque esta página recuerda
-              las que ya analizó antes.
-            </Note>
-          </StepCard>
-          <StepCard icon={<ListMusic className="w-5 h-5" />} title="¿Qué necesitas?">
-            <ul>
-              <li>Tu cuenta de YouTube Music (la gratis vale)</li>
-              <li>Un ordenador con internet (en el móvil es más incómodo)</li>
-              <li>Seguir esta guía paso a paso, sin saltarte nada 😊</li>
-            </ul>
-          </StepCard>
-        </>
-      )}
+      <div
+        key={step}
+        id={`guide-step-${step}`}
+        className="guide-content"
+        role="tabpanel"
+        aria-labelledby={`guide-tab-${step}`}
+      >
+        <div className="guide-intro">
+          <span className="guide-intro-icon"><ActiveIcon aria-hidden="true" /></span>
+          <div className="guide-intro-copy">
+            <p>Paso {step + 1} de {STEPS.length}</p>
+            <h3>{activeStep.title}</h3>
+            <span>{activeStep.description}</span>
+          </div>
+          <span className="guide-time">
+            <Clock3 className="mb-1 h-4 w-4" aria-hidden="true" />
+            Tiempo estimado
+            <strong>{activeStep.time}</strong>
+          </span>
+        </div>
 
-      {step === 1 && (
-        <>
-          <StepCard icon={<FileDown className="w-5 h-5" />} title="Exporta tu lista de canciones">
-            <p>Vamos a sacar todas tus canciones de YouTube Music en un solo archivo (un CSV):</p>
-            <ol>
-              <li>Entra en <strong>TuneMyMusic</strong> con el botón de abajo (te lleva <em>directo</em> a la exportación de YouTube Music).</li>
-              <li>Conecta tu cuenta de <strong>YouTube Music</strong> (entra con tu Google).</li>
-              <li>Marca la <strong>playlist</strong> que quieras clasificar (puedes marcar varias).
-                <Note>
-                  <strong>¡Importante!</strong> La exportación a archivo <strong>solo funciona con playlists</strong>.
-                  No vale con "canciones favoritas / me gusta" sueltas, ni álbumes, ni artistas.
-                  Si tus canciones están en "Me gusta", créales antes una playlist en YouTube Music:
-                  abre "Me gusta", toca ⋮ (o selecciona las canciones) → <em>"Añadir a playlist"</em> → <em>"Nueva playlist"</em>.
-                </Note>
-              </li>
-              <li>Pulsa <strong>"Choose Destination" / "Elegir destino"</strong> y <strong>baja hasta el FINAL de la lista</strong>.
-                Verás muchas plataformas (Spotify, Apple Music…): sigue bajando, que debajo de todas está
-                <strong>"Exportar a archivo"</strong> (este botón):</li>
-            </ol>
-            <img
-              src="/guia/exportar-archivo.png"
-              alt='Botón "Exportar archivo" de TuneMyMusic'
-              className="rounded-xl border border-[#e5e5ea] my-2 w-44 shadow-sm"
-            />
-            <ol start={5}>
-              <li>Elige formato <strong>CSV</strong> y descarga el archivo. ¡Ya lo tienes!</li>
-            </ol>
-            <ExtLink href="https://www.tunemymusic.com/transfer/youtube-music-to-file">
-              Abrir TuneMyMusic (directo a exportar)
-            </ExtLink>
-            <Note>
-              <strong>Trampa frecuente:</strong> si acabas en una página que dice <em>"¡Tu página para compartir está lista!"</em>
-              con botones de Spotify, Apple Music, etc., has entrado en <strong>Compartir</strong>, que no sirve.
-              Vuelve atrás y usa <strong>Transferir / "Let's start"</strong>.
-            </Note>
-            <Note>
-              <strong>Límite del plan gratis:</strong> TuneMyMusic exporta hasta 500 canciones gratis.
-              Si tienes más, exporta por partes (varias playlists) o consulta el precio actualizado del plan Premium.
-            </Note>
-          </StepCard>
-          <StepCard icon={<FileDown className="w-5 h-5" />} title="Alternativa: Google Takeout">
-            <p>
-              Si TuneMyMusic te da problemas, también puedes usar{" "}
-              <a href="https://takeout.google.com" target="_blank" rel="noopener" className="underline font-medium">Google Takeout</a>:
-              desmarca todo, marca solo <strong>YouTube y YouTube Music</strong>, y dentro elige las playlists.
-              Google te enviará un enlace de descarga con los CSV.
-            </p>
-          </StepCard>
-        </>
-      )}
+        {step === 0 && (
+          <div className="guide-grid">
+            <GuideCard icon={Play} title="El recorrido" wide>
+              <ol>
+                <li><strong>Exporta</strong> una playlist de YouTube Music como CSV.</li>
+                <li><strong>Analízala</strong> aquí para obtener tonalidad y BPM.</li>
+                <li><strong>Descarga</strong> las nuevas listas agrupadas y vuelve a importarlas.</li>
+              </ol>
+              <Callout kind="tip">
+                La primera vez suele llevar 15–20 minutos. Después será mucho más rápido porque recordamos las
+                canciones ya analizadas.
+              </Callout>
+            </GuideCard>
+            <GuideCard icon={ShieldCheck} title="Lo que necesitas">
+              <ul>
+                <li>Una playlist de YouTube Music.</li>
+                <li>Un ordenador con conexión a internet.</li>
+                <li>No necesitas una cuenta Premium.</li>
+              </ul>
+            </GuideCard>
+            <GuideCard icon={Download} title="Lo que obtendrás">
+              <ul>
+                <li>Un CSV por tonalidad.</li>
+                <li>Tonalidad, código Camelot y BPM.</li>
+                <li>Una lista separada para revisar.</li>
+              </ul>
+            </GuideCard>
+          </div>
+        )}
 
-      {step === 2 && (
-        <>
-          <StepCard icon={<UploadCloud className="w-5 h-5" />} title="Sube el archivo y analiza">
-            <ol>
-              <li>Ve a la pestaña <strong>🎵 Clasificar</strong> de esta página.</li>
-              <li>Arrastra el CSV que has descargado a la zona punteada (o haz clic y elígelo).</li>
-              <li>Verás cuántas canciones se han cargado. Pulsa <strong>"Analizar canciones"</strong>.</li>
-              <li>Espera: verás una barra de progreso. Con 300 canciones suele tardar unos minutos.</li>
-              <li>Al terminar tendrás tus canciones agrupadas por tonalidad, ya traducidas al español.</li>
-            </ol>
-            <Button onClick={goToClassifier} className="mt-3">
-              Ir a Clasificar <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
-            <Tip>
-              <strong>Truco:</strong> las canciones que ya analizaste alguna vez salen al instante,
-              porque esta página las recuerda. Repetir el proceso con tu biblioteca actualizada es rapidísimo.
-            </Tip>
-          </StepCard>
-          <StepCard icon={<Info className="w-5 h-5" />} title="Equivalencias de tonalidades">
-            <p>Verás las tonalidades ya traducidas al español, pero por si las ves en inglés en otras webs:</p>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {["C = Do", "D = Re", "E = Mi", "F = Fa", "G = Sol", "A = La", "B = Si", "m = menor", "sin m = Mayor"].map(
-                (b) => (
-                  <span key={b} className="px-3 py-1 rounded-lg bg-[#e3f2fd] text-[#1565c0] text-xs font-medium">
-                    {b}
-                  </span>
-                ),
-              )}
-            </div>
-          </StepCard>
-        </>
-      )}
+        {step === 1 && (
+          <div className="guide-grid">
+            <GuideCard icon={FileDown} title="Con TuneMyMusic" wide>
+              <ol>
+                <li>Abre TuneMyMusic y conecta tu cuenta de <strong>YouTube Music</strong>.</li>
+                <li>Selecciona la playlist que quieres clasificar.</li>
+                <li>En “Elegir destino”, baja hasta <strong>Exportar a archivo</strong>.</li>
+                <li>Elige <strong>CSV</strong> y guarda el archivo.</li>
+              </ol>
+              <img
+                src="/guia/exportar-archivo.png"
+                alt='Opción "Exportar archivo" de TuneMyMusic'
+                className="guide-image"
+              />
+              <ExternalButton href="https://www.tunemymusic.com/transfer/youtube-music-to-file">
+                Abrir TuneMyMusic
+              </ExternalButton>
+              <Callout kind="note">
+                La exportación funciona con playlists, no con “Me gusta” sueltos. Si hace falta, crea primero una
+                playlist con esas canciones. El plan gratuito admite hasta 500 canciones.
+              </Callout>
+            </GuideCard>
+            <GuideCard icon={FileUp} title="Alternativa: Google Takeout" wide>
+              <p>
+                En Google Takeout, desmarca todo y selecciona únicamente <strong>YouTube y YouTube Music</strong>.
+                Dentro, elige las playlists. Google te enviará los CSV.
+              </p>
+              <ExternalButton href="https://takeout.google.com">Abrir Google Takeout</ExternalButton>
+            </GuideCard>
+          </div>
+        )}
 
-      {step === 3 && (
-        <>
-          <StepCard icon={<ListMusic className="w-5 h-5" />} title="Convierte los CSV en playlists de YouTube Music">
-            <ol>
-              <li>En la pestaña <strong>🎵 Clasificar</strong>, pulsa <strong>"Descargar todas (ZIP)"</strong> y descomprime el ZIP (doble clic).</li>
-              <li>Tendrás un archivo por tonalidad: <em>"Do Mayor.csv"</em>, <em>"La menor.csv"</em>…</li>
-              <li>Vuelve a <strong>TuneMyMusic</strong> con el botón de abajo (va <em>directo</em> a subir archivo → YouTube Music).</li>
-              <li>Sube uno de los CSV.</li>
-              <li>Ponle de nombre a la playlist el de la tonalidad (<em>"Do Mayor"</em>) y confirma.</li>
-              <li>Repite con cada CSV. Al terminar, abre YouTube Music: ¡allí están tus listas!</li>
-            </ol>
-            <ExtLink href="https://www.tunemymusic.com/transfer/file-to-youtube-music">
-              Abrir TuneMyMusic (directo a subir archivo)
-            </ExtLink>
-            <Note>
-              <strong>Recuerda el límite de 500 canciones</strong> del plan gratis de TuneMyMusic (cuentan las que
-              exportaste en el paso 2 + las que importes ahora). Si te pasas, las alternativas son: un mes de
-              Premium, o crear las playlists a mano en YouTube Music mirando los CSV.
-            </Note>
-            <Tip>
-              <strong>¿Cómo descomprimo el ZIP?</strong> En Windows: doble clic y arrastra los archivos fuera.
-              En Mac: doble clic y aparece la carpeta sola.
-            </Tip>
-          </StepCard>
-        </>
-      )}
+        {step === 2 && (
+          <div className="guide-grid">
+            <GuideCard icon={UploadCloud} title="Sube y analiza" wide>
+              <ol>
+                <li>Abre <strong>Analizar música</strong> y arrastra el CSV.</li>
+                <li>Comprueba el número de canciones detectadas.</li>
+                <li>Pulsa <strong>Analizar canciones</strong> y sigue el progreso.</li>
+                <li>Revisa únicamente los casos marcados como dudosos.</li>
+              </ol>
+              <Button onClick={goToClassifier} className="mt-4">
+                Ir al tonalizador
+                <ArrowRight aria-hidden="true" />
+              </Button>
+              <Callout>
+                El archivo se interpreta en tu navegador. Solo se envían los metadatos necesarios para identificar
+                cada canción.
+              </Callout>
+            </GuideCard>
+            <GuideCard icon={Sparkles} title="Lectura rápida de tonos" wide>
+              <p>Las tonalidades aparecen traducidas. Estas son las equivalencias básicas:</p>
+              <div className="tone-grid">
+                {["C · Do", "D · Re", "E · Mi", "F · Fa", "G · Sol", "A · La", "B · Si", "m · menor", "sin m · Mayor"].map(
+                  (tone) => <span key={tone}>{tone}</span>,
+                )}
+              </div>
+            </GuideCard>
+          </div>
+        )}
 
-      {step === 4 && (
-        <>
-          <StepCard icon={<LifeBuoy className="w-5 h-5" />} title="Canciones no encontradas">
-            <p>
-              Algunas canciones (música muy minoritaria, versiones raras, directos) no están en las bases de datos.
-              Las verás en la caja amarilla <strong>"no encontradas"</strong>. Para esas:
-            </p>
-            <ol>
-              <li>Descarga esa canción en MP3 (o consigue el archivo de audio).</li>
-              <li>Entra en <strong>Tunebat Analyzer</strong> (botón de abajo).</li>
-              <li>Arrastra el archivo de audio y en segundos te dice la tonalidad.</li>
-              <li>Añade esa canción a mano a la playlist correspondiente en YouTube Music.</li>
-            </ol>
-            <ExtLink href="https://tunebat.com/Analyzer" dark={false}>Abrir Tunebat Analyzer</ExtLink>
-          </StepCard>
-          <StepCard icon={<Info className="w-5 h-5" />} title="Consejos finales">
-            <ul>
-              <li><strong>No necesitas YouTube Music Premium</strong> en ningún paso.</li>
-              <li>Si una canción cambia de tonalidad a mitad, ponla donde predomine.</li>
-              <li>Cuando tengas canciones nuevas: repite desde el paso 2. Las antiguas saldrán al instante.</li>
-              <li>Las playlists se sincronizan solas entre tu móvil y tu ordenador.</li>
-              <li>Si te atascas, vuelve a esta guía y repite el paso con calma. ¡Tú puedes! 🎶</li>
-            </ul>
-          </StepCard>
-        </>
-      )}
+        {step === 3 && (
+          <div className="guide-grid">
+            <GuideCard icon={Download} title="Descarga los grupos" wide>
+              <ol>
+                <li>Pulsa <strong>Descargar ZIP</strong> cuando termine el análisis.</li>
+                <li>Descomprime el archivo: encontrarás un CSV por tonalidad.</li>
+                <li>Abre TuneMyMusic y elige la transferencia <strong>archivo → YouTube Music</strong>.</li>
+                <li>Importa cada CSV usando su tonalidad como nombre de playlist.</li>
+              </ol>
+              <ExternalButton href="https://www.tunemymusic.com/transfer/file-to-youtube-music">
+                Importar en TuneMyMusic
+              </ExternalButton>
+            </GuideCard>
+            <GuideCard icon={Info} title="Un detalle útil">
+              <p>En Windows y Mac basta con hacer doble clic en el ZIP para ver o extraer los archivos.</p>
+            </GuideCard>
+            <GuideCard icon={ListMusic} title="El resultado">
+              <p>Las playlists aparecerán en YouTube Music y se sincronizarán entre ordenador y móvil.</p>
+            </GuideCard>
+          </div>
+        )}
 
+        {step === 4 && (
+          <div className="guide-grid">
+            <GuideCard icon={CircleHelp} title="Canciones no encontradas" wide>
+              <ol>
+                <li>Consigue el archivo de audio de esa canción.</li>
+                <li>Analízalo con Tunebat Analyzer.</li>
+                <li>Elige la tonalidad manualmente en la tabla de resultados.</li>
+              </ol>
+              <ExternalButton href="https://tunebat.com/Analyzer">Abrir Tunebat Analyzer</ExternalButton>
+              <Callout kind="tip">
+                El tonalizador prefiere pedir una revisión antes que asignar una versión o tonalidad incorrecta.
+              </Callout>
+            </GuideCard>
+            <GuideCard icon={Check} title="Antes de terminar">
+              <ul>
+                <li>No necesitas YouTube Music Premium.</li>
+                <li>Las correcciones se guardan en este navegador.</li>
+                <li>Puedes repetir el proceso cuando añadas música.</li>
+              </ul>
+            </GuideCard>
+            <GuideCard icon={Sparkles} title="Ya lo tienes">
+              <p>La próxima importación será más rápida: las canciones conocidas aparecerán casi al instante.</p>
+              <Button onClick={goToClassifier} className="mt-4">
+                Empezar ahora
+                <ArrowRight aria-hidden="true" />
+              </Button>
+            </GuideCard>
+          </div>
+        )}
       </div>
 
-      {/* Flechas */}
-      <div className="flex justify-between mt-2 pt-4 border-t border-[#e5e5ea]">
-        <Button variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> Anterior
+      <div className="guide-actions">
+        <Button variant="outline" onClick={() => setStep((current) => current - 1)} disabled={step === 0}>
+          <ArrowLeft aria-hidden="true" />
+          Anterior
         </Button>
-        <Button variant="outline" onClick={() => setStep(step + 1)} disabled={step === STEPS.length - 1}>
-          {step === STEPS.length - 1 ? "¡Listo! 🎉" : "Siguiente"} <ArrowRight className="w-4 h-4 ml-1" />
+        <span className="guide-actions-count">{String(step + 1).padStart(2, "0")} / {String(STEPS.length).padStart(2, "0")}</span>
+        <Button
+          variant={step === STEPS.length - 1 ? "default" : "outline"}
+          onClick={() => step === STEPS.length - 1 ? goToClassifier() : setStep((current) => current + 1)}
+        >
+          {step === STEPS.length - 1 ? "Empezar" : "Siguiente"}
+          <ArrowRight aria-hidden="true" />
         </Button>
       </div>
     </div>
