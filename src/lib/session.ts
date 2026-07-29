@@ -2,6 +2,7 @@ import type { KeyLookupResult, SongInput } from "@contracts/types";
 
 export type SavedAnalysis = {
   version: 2;
+  sourceMode?: "playlist" | "audio";
   fileName: string;
   songs: SongInput[];
   results: KeyLookupResult[];
@@ -47,6 +48,9 @@ export function parseSavedAnalysis(raw: string | null): SavedAnalysis | null {
     if (
       !isRecord(parsed) ||
       parsed.version !== 2 ||
+      (parsed.sourceMode !== undefined &&
+        parsed.sourceMode !== "playlist" &&
+        parsed.sourceMode !== "audio") ||
       typeof parsed.fileName !== "string" ||
       !Array.isArray(parsed.songs) ||
       !parsed.songs.every(isSong) ||
@@ -76,6 +80,7 @@ export function savedAnalysisIsComplete(saved: SavedAnalysis | null): boolean {
 }
 
 export function getInitialChapter(saved: SavedAnalysis | null): InitialChapter {
+  if (saved?.sourceMode === "audio") return "analyze";
   if (savedAnalysisIsComplete(saved)) return "download";
   if (saved?.songs.length) return "analyze";
   return "export";

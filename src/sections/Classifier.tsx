@@ -92,6 +92,7 @@ const TUNEMY_MUSIC_IMPORT_URL =
 
 type ReviewFilter = "needs_attention" | "all" | "manual";
 type DeliveryState = "ready" | "downloaded" | "finished";
+type SourceMode = "playlist" | "audio";
 type AcousticJob = {
   state: "analyzing" | "complete" | "error";
   progress: number;
@@ -117,6 +118,25 @@ type ResultCounts = {
   catalogue: number;
 };
 
+function createLocalSong(file: File): SongInput {
+  const title =
+    file.name
+      .replace(/\.[^.]+$/, "")
+      .replace(/_/g, " ")
+      .trim() || "Canción del dispositivo";
+  const uniquePart =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${file.size}`;
+
+  return {
+    id: `audio-${uniquePart}`,
+    title,
+    artists: ["Archivo de audio local"],
+    position: 0,
+  };
+}
+
 const STATUS_LABELS: Record<ClassificationStatus, string> = {
   classified: "Lista",
   review: "Confirma esta",
@@ -141,10 +161,8 @@ const REASON_LABELS: Record<string, string> = {
   no_catalogue_candidate: "No aparece en nuestra búsqueda",
   provider_temporarily_unavailable: "La búsqueda no respondió esta vez",
   spotify_not_configured: "La búsqueda no está disponible ahora",
-  spotify_audio_features_forbidden:
-    "Spotify identificó la canción",
-  spotify_audio_features_circuit_open:
-    "Spotify identificó la canción",
+  spotify_audio_features_forbidden: "Spotify identificó la canción",
+  spotify_audio_features_circuit_open: "Spotify identificó la canción",
   spotify_audio_features_unauthorized: "Spotify identificó la canción",
   spotify_audio_features_not_found:
     "Spotify no dispone de datos tonales para esta grabación",
@@ -369,10 +387,7 @@ function HomeHero({
             <strong>ordenada por tonalidad.</strong>
           </div>
 
-          <nav
-            className="home-mobile-step-nav"
-            aria-label="Pasos principales"
-          >
+          <nav className="home-mobile-step-nav" aria-label="Pasos principales">
             {NAV_ITEMS.map(item => {
               const Icon = item.icon;
               return (
@@ -492,7 +507,7 @@ function WorkspaceHeader({
           {saveWarning
             ? "Sin guardado automático"
             : analyzing
-              ? "Guardando cada parte"
+              ? "Procesando y guardando"
               : "Se guarda automáticamente"}
         </span>
         <button type="button" className="help-button" onClick={onHelp}>
@@ -504,7 +519,13 @@ function WorkspaceHeader({
   );
 }
 
-function ExportChapter({ onChooseCsv }: { onChooseCsv: () => void }) {
+function ExportChapter({
+  onChooseCsv,
+  onChooseAudio,
+}: {
+  onChooseCsv: () => void;
+  onChooseAudio: () => void;
+}) {
   return (
     <section
       className="chapter-stage export-stage"
@@ -537,6 +558,23 @@ function ExportChapter({ onChooseCsv }: { onChooseCsv: () => void }) {
             <ArrowRight aria-hidden="true" />
           </button>
         </div>
+
+        <button
+          type="button"
+          className="direct-audio-action"
+          onClick={onChooseAudio}
+        >
+          <span className="direct-audio-icon" aria-hidden="true">
+            <FileAudio />
+          </span>
+          <span>
+            <strong>Analizar una canción de mi dispositivo</strong>
+            <small>
+              Elige un MP3, M4A, WAV, FLAC, OGG o AAC. No necesitas un CSV.
+            </small>
+          </span>
+          <ArrowRight aria-hidden="true" />
+        </button>
 
         <div className="calm-note">
           <ShieldCheck aria-hidden="true" />
@@ -654,9 +692,7 @@ function AnalysisProcess() {
           <span>2</span>
           <div>
             <strong>Identificación con Spotify</strong>
-            <small>
-              Confirmamos que es la canción y la versión correctas.
-            </small>
+            <small>Confirmamos que es la canción y la versión correctas.</small>
           </div>
         </li>
         <li>
@@ -699,7 +735,10 @@ function AnalysisSongRow({
   ) => void;
 }) {
   const tonalConfidence = result ? getTonalConfidence(result) : null;
-  const showAcoustic = result ? needsAcousticAnalysis(result) : false;
+  const showAcoustic =
+    job?.state === "analyzing" ||
+    job?.state === "error" ||
+    (result ? needsAcousticAnalysis(result) : false);
   const analyzingAudio = job?.state === "analyzing";
   const reasons = result
     ? visibleResultReasons(result, "Resultado que conviene comprobar")
@@ -799,9 +838,11 @@ function AnalysisSongRow({
                 <strong>
                   {analyzingAudio
                     ? `Analizando… ${Math.round(job.progress * 100)}%`
-                    : "Analizar audio"}
+                    : result?.source === "local_acoustic"
+                      ? "Analizar otro archivo"
+                      : "Analizar audio"}
                 </strong>
-                <small>Elige el archivo de esta canción</small>
+                <small>Elige el MP3 o archivo de esta canción</small>
               </span>
             </label>
             <p>
@@ -827,6 +868,7 @@ function AnalysisSongRow({
 }
 
 type AnalyzeChapterProps = {
+  sourceMode: SourceMode;
   parsed: ParsedCsv | null;
   columns: SongColumns | null;
   songs: SongInput[] | null;
@@ -851,12 +893,14 @@ type AnalyzeChapterProps = {
     result: KeyLookupResult | null,
     file: File
   ) => void;
+  onChooseAudio: () => void;
   onOpenCorrections: () => void;
   onChangeFile: () => void;
   onDownload: () => void;
 };
 
 function AnalyzeChapter({
+  sourceMode,
   parsed,
   columns,
   songs,
@@ -877,6 +921,7 @@ function AnalyzeChapter({
   onColumns,
   onAnalyze,
   onAnalyzeAudio,
+  onChooseAudio,
   onOpenCorrections,
   onChangeFile,
   onDownload,
@@ -924,9 +969,8 @@ function AnalyzeChapter({
           <h2>Estamos buscando la tonalidad real.</h2>
           <p>
             Para cada grabación comprobamos una caché vigente. Si no hay un
-            resultado guardado, Spotify identifica la canción y ReccoBeats
-            busca su tonalidad. En esta fase no enviamos ningún archivo de
-            audio.
+            resultado guardado, Spotify identifica la canción y ReccoBeats busca
+            su tonalidad. En esta fase no enviamos ningún archivo de audio.
           </p>
           <div className="progress-block">
             <div className="progress-copy">
@@ -943,6 +987,102 @@ function AnalyzeChapter({
               Guardamos cada parte al terminarla y mostraremos la fuente de cada
               resultado.
             </small>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (sourceMode === "audio" && songs?.length) {
+    const song = songs[0];
+    const result =
+      results.find(candidate => candidate.inputId === song.id) ?? null;
+    const job = acousticJobs[song.id];
+    const analyzingAudio = job?.state === "analyzing";
+    const failed = job?.state === "error";
+    const reliable =
+      result?.status === "classified" && result.source === "local_acoustic";
+
+    return (
+      <section className="chapter-stage analysis-results-stage standalone-audio-stage">
+        <div className="analysis-results-shell">
+          <header className="analysis-results-header">
+            <div>
+              <p
+                className={`stage-kicker ${failed || result?.status === "review" ? "is-warm" : ""}`}
+              >
+                {analyzingAudio ? (
+                  <LoaderCircle className="is-spinning" aria-hidden="true" />
+                ) : reliable ? (
+                  <BadgeCheck aria-hidden="true" />
+                ) : (
+                  <FileAudio aria-hidden="true" />
+                )}
+                {analyzingAudio
+                  ? "Analizando el audio"
+                  : reliable
+                    ? "Análisis terminado"
+                    : failed
+                      ? "Necesitamos intentarlo de nuevo"
+                      : "Análisis de una canción"}
+              </p>
+              <h2>
+                {analyzingAudio
+                  ? "Estamos escuchando tu canción."
+                  : reliable
+                    ? "Esta es su tonalidad."
+                    : failed
+                      ? "No hemos podido leer este audio."
+                      : "Conviene comprobar el resultado."}
+              </h2>
+              <p>
+                {analyzingAudio
+                  ? "Calculamos la tonalidad y los BPM directamente desde el archivo. Puede tardar unos segundos."
+                  : reliable
+                    ? "El resultado se ha calculado directamente a partir del archivo de tu dispositivo."
+                    : failed
+                      ? "Puedes volver a elegir el mismo archivo o probar con otro formato compatible."
+                      : "El cálculo no ha sido suficientemente claro. Puedes probar con otro archivo o corregir la tonalidad manualmente."}
+              </p>
+            </div>
+            <div className="analysis-results-actions">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onChooseAudio}
+                disabled={analyzingAudio}
+              >
+                <FileAudio aria-hidden="true" />
+                Elegir otra canción
+              </Button>
+              {result ? (
+                <button
+                  type="button"
+                  className="analysis-correction-link"
+                  onClick={onOpenCorrections}
+                >
+                  Corrección manual opcional
+                </button>
+              ) : null}
+            </div>
+          </header>
+
+          <div className="standalone-audio-explainer">
+            <LockKeyhole aria-hidden="true" />
+            <p>
+              <strong>Tu MP3 no sale del dispositivo.</strong> Se decodifica y
+              analiza únicamente en este navegador; no se sube ni se conserva.
+            </p>
+          </div>
+
+          <div className="analysis-song-list" aria-label="Canción analizada">
+            <AnalysisSongRow
+              index={0}
+              song={song}
+              result={result}
+              job={job}
+              onAnalyzeAudio={onAnalyzeAudio}
+            />
           </div>
         </div>
       </section>
@@ -1212,8 +1352,8 @@ function AnalyzeChapter({
         </p>
         <h2>Ahora trae el archivo CSV aquí.</h2>
         <p>
-          Elige el archivo CSV que acabas de guardar y nosotros nos ocupamos
-          de entenderlo.
+          Elige el archivo CSV que acabas de guardar y nosotros nos ocupamos de
+          entenderlo.
         </p>
         <div className="upload-assurances">
           <span>
@@ -1252,6 +1392,23 @@ function AnalyzeChapter({
             título y artista solo cuando pulses Analizar.
           </p>
         )}
+        <div className="upload-alternative" aria-label="Otra forma de analizar">
+          <span>o, si solo quieres conocer la tonalidad de una canción</span>
+          <button
+            type="button"
+            className="direct-audio-action is-compact"
+            onClick={onChooseAudio}
+          >
+            <span className="direct-audio-icon" aria-hidden="true">
+              <FileAudio />
+            </span>
+            <span>
+              <strong>Elegir un MP3 de mi dispositivo</strong>
+              <small>También admite M4A, WAV, FLAC, OGG y AAC</small>
+            </span>
+            <ArrowRight aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -1679,6 +1836,9 @@ export default function Classifier() {
   const [chapter, setChapter] = useState<Chapter>(() =>
     getInitialChapter(savedInitial)
   );
+  const [sourceMode, setSourceMode] = useState<SourceMode>(
+    () => savedInitial?.sourceMode ?? "playlist"
+  );
   const [parsed, setParsed] = useState<ParsedCsv | null>(null);
   const [columns, setColumns] = useState<SongColumns | null>(null);
   const [songs, setSongs] = useState<SongInput[] | null>(
@@ -1712,6 +1872,7 @@ export default function Classifier() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [acousticJobs, setAcousticJobs] = useState<AcousticJobs>({});
   const fileInput = useRef<HTMLInputElement>(null);
+  const audioInput = useRef<HTMLInputElement>(null);
   const fileReadId = useRef(0);
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -1725,9 +1886,11 @@ export default function Classifier() {
   const openReview = useCallback(() => setReviewOpen(true), []);
 
   useEffect(() => {
-    if (!songs?.length) return;
+    if (!songs?.length || (sourceMode === "audio" && results.length === 0))
+      return;
     const saved: SavedAnalysis = {
       version: 2,
+      sourceMode,
       fileName,
       songs,
       results,
@@ -1744,7 +1907,7 @@ export default function Classifier() {
       setSaveWarning(storageUnavailable);
     }, 180);
     return () => window.clearTimeout(saveProgress);
-  }, [duplicateCount, duplicateSongs, fileName, results, songs]);
+  }, [duplicateCount, duplicateSongs, fileName, results, songs, sourceMode]);
 
   useEffect(() => {
     if (view !== "workspace") return;
@@ -1795,6 +1958,7 @@ export default function Classifier() {
       }
       setParsed(null);
       setColumns(null);
+      setSourceMode("playlist");
       setSongs(null);
       setResults([]);
       setDuplicateCount(0);
@@ -1857,6 +2021,7 @@ export default function Classifier() {
     }
     setParsed(null);
     setColumns(null);
+    setSourceMode("playlist");
     setSongs(null);
     setResults([]);
     setDuplicateCount(0);
@@ -1953,8 +2118,10 @@ export default function Classifier() {
     async (
       song: SongInput,
       existingResult: KeyLookupResult | null,
-      file: File
+      file: File,
+      targetSongs: SongInput[] | null = songs
     ) => {
+      setError(null);
       setAcousticJobs(current => ({
         ...current,
         [song.id]: { state: "analyzing", progress: 0 },
@@ -2005,8 +2172,8 @@ export default function Classifier() {
             cached: false,
           };
           resultMap.set(song.id, nextResult);
-          return songs
-            ? orderedResults(songs, resultMap)
+          return targetSongs
+            ? orderedResults(targetSongs, resultMap)
             : [...current, nextResult];
         });
 
@@ -2046,6 +2213,39 @@ export default function Classifier() {
     [songs]
   );
 
+  const handleStandaloneAudio = useCallback(
+    (file: File) => {
+      const song = createLocalSong(file);
+      fileReadId.current += 1;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // El análisis puede continuar aunque no haya almacenamiento local.
+      }
+      setParsed(null);
+      setColumns(null);
+      setSourceMode("audio");
+      setSongs([song]);
+      setResults([]);
+      setDuplicateCount(0);
+      setDuplicateSongs([]);
+      setProgress(null);
+      setReadingFile(false);
+      setError(null);
+      setSaveWarning(false);
+      setFileName(file.name);
+      setDeliveryState("ready");
+      setDownloading(false);
+      setDownloadError(null);
+      setAcousticJobs({});
+      setReviewFilter("all");
+      setChapter("analyze");
+      setView("workspace");
+      void analyzeLocalAudio(song, null, file, [song]);
+    },
+    [analyzeLocalAudio]
+  );
+
   const groups = useMemo(() => groupByKey(results), [results]);
   const counts = useMemo(
     () =>
@@ -2067,11 +2267,15 @@ export default function Classifier() {
       ),
     [results]
   );
+  const localAudioBusy = Object.values(acousticJobs).some(
+    job => job.state === "analyzing"
+  );
   const analysisComplete =
     Boolean(songs?.length) &&
     results.length === songs?.length &&
-    pendingSongs.length === 0;
-  const analyzing = progress !== null;
+    pendingSongs.length === 0 &&
+    !localAudioBusy;
+  const analyzing = progress !== null || localAudioBusy;
   const songById = useMemo(
     () => new Map((songs ?? []).map(song => [song.id, song])),
     [songs]
@@ -2137,6 +2341,18 @@ export default function Classifier() {
           event.target.value = "";
         }}
       />
+      <input
+        ref={audioInput}
+        type="file"
+        accept="audio/*,.mp3,.m4a,.wav,.flac,.ogg,.aac"
+        className="sr-only"
+        aria-label="Elegir una canción en MP3 u otro formato de audio"
+        onChange={event => {
+          const file = event.target.files?.[0];
+          if (file) handleStandaloneAudio(file);
+          event.target.value = "";
+        }}
+      />
 
       <main className="app-main">
         <WorkspaceHeader
@@ -2159,9 +2375,13 @@ export default function Classifier() {
         >
           <div className="stage-transition" key={chapter}>
             {chapter === "export" ? (
-              <ExportChapter onChooseCsv={() => fileInput.current?.click()} />
+              <ExportChapter
+                onChooseCsv={() => fileInput.current?.click()}
+                onChooseAudio={() => audioInput.current?.click()}
+              />
             ) : chapter === "analyze" ? (
               <AnalyzeChapter
+                sourceMode={sourceMode}
                 parsed={parsed}
                 columns={columns}
                 songs={songs}
@@ -2187,6 +2407,7 @@ export default function Classifier() {
                 onAnalyzeAudio={(song, result, file) =>
                   void analyzeLocalAudio(song, result, file)
                 }
+                onChooseAudio={() => audioInput.current?.click()}
                 onOpenCorrections={openReview}
                 onChangeFile={changeFile}
                 onDownload={() => setChapter("download")}

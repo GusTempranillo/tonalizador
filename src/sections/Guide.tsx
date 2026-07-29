@@ -31,9 +31,10 @@ const HELP: Record<Chapter, ChapterHelp> = {
       "Selecciona únicamente la playlist que quieres ordenar por tonalidad.",
       "Elige exportarla a un archivo y selecciona el formato CSV. El archivo se guardará normalmente en la carpeta Descargas de tu dispositivo.",
       "Vuelve a Tonalizador, pulsa «Ya tengo el archivo CSV» y elige el archivo que acabas de guardar.",
+      "Si solo quieres conocer la tonalidad de una canción que ya tienes en el dispositivo, pulsa «Analizar una canción de mi dispositivo» y elige directamente su archivo MP3. En ese caso no necesitas crear ningún CSV.",
     ],
     reason:
-      "La herramienta necesita saber qué canciones contiene tu playlist. El archivo CSV funciona como una lista: incluye datos como el título y el artista, pero no contiene la música ni modifica la playlist original. Tonalizador lee ese archivo en tu navegador para preparar las canciones que se analizarán.",
+      "Para ordenar una playlist completa, la herramienta necesita saber qué canciones contiene. El archivo CSV funciona como una lista: incluye datos como el título y el artista, pero no contiene la música ni modifica la playlist original. Si eliges una sola canción en MP3 u otro formato de audio compatible, Tonalizador analiza directamente ese archivo en el navegador y no necesita la lista CSV.",
     analogy:
       "Es como entregar el índice de una biblioteca: antes de ordenar los libros por categorías, necesitamos una lista de los títulos que hay.",
   },
@@ -45,12 +46,13 @@ const HELP: Record<Chapter, ChapterHelp> = {
       "Comprueba el nombre del archivo y el número de canciones encontradas. Si no es la playlist correcta, puedes elegir otro archivo antes de continuar.",
       "Pulsa «Analizar mis canciones». Puedes dejar que termine; el progreso se guarda automáticamente en este navegador.",
       "Cuando acabe, revisa la tonalidad mostrada junto a cada canción. Spotify identifica la canción y ReccoBeats proporciona la tonalidad y los BPM.",
-      "Si una canción queda sin tonalidad o el resultado no es suficientemente fiable, no la colocamos automáticamente en una lista incorrecta. Puedes corregirla manualmente o analizar un archivo de audio que tengas en tu dispositivo.",
+      "Si una canción de la playlist queda sin tonalidad o el resultado no es suficientemente fiable, pulsa «Analizar audio» junto a ella y selecciona su MP3, M4A, WAV, FLAC, OGG o AAC.",
+      "También puedes analizar una canción sin importar una playlist: pulsa «Elegir un MP3 de mi dispositivo», selecciona el archivo y espera a que aparezcan la tonalidad y los BPM.",
     ],
     reason:
-      "La herramienta lee los títulos y artistas del CSV. Spotify identifica cada canción y ayuda a confirmar que se trata de la grabación correcta; después, ReccoBeats proporciona la tonalidad y los BPM. En los resultados lo resumimos así: «Spotify identificó la canción. Tonalidad obtenida de ReccoBeats». A continuación agrupamos las canciones que tienen un resultado claro y separamos las dudosas para que puedas revisarlas. Si eliges analizar un archivo de audio, ese análisis se realiza solamente en tu navegador.",
+      "Con una playlist, la herramienta lee los títulos y artistas del CSV. Spotify identifica cada canción y ayuda a confirmar que se trata de la grabación correcta; después, ReccoBeats proporciona la tonalidad y los BPM. En los resultados lo resumimos así: «Spotify identificó la canción. Tonalidad obtenida de ReccoBeats». Cuando seleccionas un MP3 u otro archivo de audio, el proceso es diferente: Tonalizador decodifica una parte del audio y calcula localmente su tonalidad y sus BPM. El archivo no se envía al servidor, no sale del dispositivo y no se conserva.",
     analogy:
-      "Es parecido a clasificar documentos: los que están claramente identificados se guardan en su carpeta y los que ofrecen dudas se dejan aparte para revisarlos. Los archivos de audio opcionales no se suben ni se conservan.",
+      "El CSV es como una lista con los nombres de varios libros; el MP3 es como entregar directamente un libro para examinarlo. En ambos casos obtenemos una clasificación, pero solo el segundo permite analizar el contenido real del archivo.",
   },
   download: {
     eyebrow: "Descargar",

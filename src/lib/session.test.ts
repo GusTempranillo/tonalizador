@@ -51,11 +51,24 @@ describe("sesión guardada", () => {
         JSON.stringify({ ...completeSession, songs: [{ title: 42 }] })
       )
     ).toBeNull();
+    expect(
+      parseSavedAnalysis(
+        JSON.stringify({ ...completeSession, sourceMode: "audio" })
+      )?.sourceMode
+    ).toBe("audio");
+    expect(
+      parseSavedAnalysis(
+        JSON.stringify({ ...completeSession, sourceMode: "desconocido" })
+      )
+    ).toBeNull();
   });
 
   it("solo abre Descargar cuando todas las canciones tienen resultado útil", () => {
     expect(savedAnalysisIsComplete(completeSession)).toBe(true);
     expect(getInitialChapter(completeSession)).toBe("download");
+    expect(getInitialChapter({ ...completeSession, sourceMode: "audio" })).toBe(
+      "analyze"
+    );
 
     const partial = { ...completeSession, results: [] };
     expect(savedAnalysisIsComplete(partial)).toBe(false);
