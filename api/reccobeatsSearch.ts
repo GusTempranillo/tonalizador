@@ -1,4 +1,3 @@
-import type { MatchedTrack } from "@contracts/types";
 import { extractSpotifyTrackId, normalizeForMatch } from "./matching";
 
 const MAX_SEARCH_PAGES = 3;
@@ -11,6 +10,7 @@ export interface ReccoSearchPage {
 
 export interface ReccoSearchMatch {
   internalId: string;
+  track: ReccoSearchCandidate;
   reasonCode:
     | "reccobeats_search_exact_spotify_id"
     | "reccobeats_search_exact_isrc"
@@ -19,7 +19,15 @@ export interface ReccoSearchMatch {
 
 type SearchPage = (page: number) => Promise<ReccoSearchPage>;
 
-interface ReccoSearchCandidate {
+export interface ReccoSearchReference {
+  spotifyId?: string | null;
+  title: string;
+  artists: string[];
+  isrc?: string | null;
+  durationMs?: number | null;
+}
+
+export interface ReccoSearchCandidate {
   internalId: string;
   title: string;
   artists: string[];
@@ -92,7 +100,7 @@ function totalPages(page: ReccoSearchPage): number | null {
 
 function sameMetadata(
   candidate: ReccoSearchCandidate,
-  reference: MatchedTrack
+  reference: ReccoSearchReference
 ): boolean {
   const titleMatches =
     normalizeForMatch(candidate.title) === normalizeForMatch(reference.title);
@@ -116,19 +124,22 @@ function sameMetadata(
  * live versions, remasters and loosely similar titles.
  */
 export async function findReccoSearchMatch(
-  reference: MatchedTrack,
+  reference: ReccoSearchReference,
   searchPage: SearchPage
 ): Promise<ReccoSearchMatch | null> {
   for (let pageNumber = 0; pageNumber < MAX_SEARCH_PAGES; pageNumber++) {
     const response = await searchPage(pageNumber);
     const pageCandidates = candidates(response);
 
-    const exactSpotify = pageCandidates.find(
-      candidate => candidate.spotifyId === reference.spotifyId
-    );
+    const exactSpotify = reference.spotifyId
+      ? pageCandidates.find(
+          candidate => candidate.spotifyId === reference.spotifyId
+        )
+      : null;
     if (exactSpotify) {
       return {
         internalId: exactSpotify.internalId,
+        track: exactSpotify,
         reasonCode: "reccobeats_search_exact_spotify_id",
       };
     }
@@ -140,6 +151,7 @@ export async function findReccoSearchMatch(
     if (exactIsrc) {
       return {
         internalId: exactIsrc.internalId,
+        track: exactIsrc,
         reasonCode: "reccobeats_search_exact_isrc",
       };
     }
@@ -150,6 +162,7 @@ export async function findReccoSearchMatch(
     if (exactMetadata) {
       return {
         internalId: exactMetadata.internalId,
+        track: exactMetadata,
         reasonCode: "reccobeats_search_exact_metadata",
       };
     }

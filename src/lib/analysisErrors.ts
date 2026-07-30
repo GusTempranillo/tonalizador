@@ -34,6 +34,10 @@ export function incompleteAnalysisMessage(
     return "Este servidor no tiene configurada la conexión con Spotify. El archivo está bien; falta activar el servicio de análisis.";
   }
 
+  if (reasons.has("provider_rate_limited")) {
+    return "Spotify ha pedido una pausa temporal. Tus canciones siguen guardadas. Espera unos minutos y pulsa «Reintentar» para continuar.";
+  }
+
   if (reasons.has("provider_temporarily_unavailable")) {
     return "Spotify o ReccoBeats no han respondido. Tus canciones siguen guardadas; puedes volver a intentarlo.";
   }

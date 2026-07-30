@@ -284,10 +284,7 @@ async function identifyTrack(song: SongInput): Promise<Identification> {
   const reasons = ["ambiguous_catalogue_match"];
   if (best.titleScore < 0.85) reasons.push("title_below_threshold");
   if (best.artistScore < 0.8) reasons.push("artist_below_threshold");
-  if (
-    meaningfulRunnerUp &&
-    best.score - meaningfulRunnerUp.score < 0.1
-  )
+  if (meaningfulRunnerUp && best.score - meaningfulRunnerUp.score < 0.1)
     reasons.push("runner_up_too_close");
   if (best.usedAggressiveTitleVariant) reasons.push("version_marker_removed");
   return {
@@ -324,6 +321,45 @@ async function fetchReccoAudioFeatures(
     features,
     reasonCode: features ? null : "reccobeats_invalid",
   };
+}
+
+async function searchReccoExactMatch(
+  reference: {
+    spotifyId?: string | null;
+    title: string;
+    artists: string[];
+    isrc?: string | null;
+    durationMs?: number | null;
+  },
+  budgetMs = 8_000
+) {
+  const startedAt = Date.now();
+  return findReccoSearchMatch(reference, async page => {
+    const remainingMs = budgetMs - (Date.now() - startedAt);
+    if (remainingMs <= 0) {
+      throw new Error("reccobeats_search_budget_exceeded");
+    }
+    const url = new URL(`${RECCO_API}/track/search`);
+    url.searchParams.set("searchText", reference.title);
+    url.searchParams.set("page", String(page));
+    const response = await providerFetch(
+      url,
+      {},
+      {
+        provider: "reccobeats",
+        maxAttempts: 1,
+        timeoutMs: Math.min(5_000, remainingMs),
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`reccobeats_search_${response.status}`);
+    }
+    return (await response.json()) as {
+      content?: unknown;
+      page?: unknown;
+      totalPages?: unknown;
+    };
+  });
 }
 
 async function reccobeatsFeatures(
@@ -378,34 +414,8 @@ async function reccobeatsFeatures(
     );
   }
 
-  const searchStartedAt = Date.now();
   try {
-    const match = await findReccoSearchMatch(reference, async page => {
-      const remainingMs = 8_000 - (Date.now() - searchStartedAt);
-      if (remainingMs <= 0) {
-        throw new Error("reccobeats_search_budget_exceeded");
-      }
-      const url = new URL(`${RECCO_API}/track/search`);
-      url.searchParams.set("searchText", reference.title);
-      url.searchParams.set("page", String(page));
-      const response = await providerFetch(
-        url,
-        {},
-        {
-          provider: "reccobeats",
-          maxAttempts: 1,
-          timeoutMs: Math.min(5_000, remainingMs),
-        }
-      );
-      if (!response.ok) {
-        throw new Error(`reccobeats_search_${response.status}`);
-      }
-      return (await response.json()) as {
-        content?: unknown;
-        page?: unknown;
-        totalPages?: unknown;
-      };
-    });
+    const match = await searchReccoExactMatch(reference);
     if (!match) {
       return {
         features: null,
@@ -483,6 +493,64 @@ function baseResult(
   };
 }
 
+function isSpotifyRateLimit(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    /^spotify_(?:auth|track|search|audio_features)_429$/.test(error.message)
+  );
+}
+
+async function classifyWithReccoFallback(
+  song: SongInput
+): Promise<KeyLookupResult | null> {
+  const spotifyId = extractSpotifyTrackId(song.platformUrl);
+  const match = await searchReccoExactMatch(
+    {
+      spotifyId,
+      title: song.title,
+      artists: song.artists,
+      isrc: song.isrc,
+      durationMs: song.durationMs,
+    },
+    6_000
+  );
+  if (!match) return null;
+
+  const tonal = await fetchReccoAudioFeatures(match.internalId);
+  if (!tonal.features) return null;
+
+  const candidate = match.track;
+  const features = tonal.features;
+  const result = baseResult(song, "classified", {
+    keyOf: features.keyOf,
+    keySpanish: keyToSpanish(features.keyOf),
+    camelot: features.camelot,
+    bpm: features.bpm,
+    confidence:
+      match.reasonCode === "reccobeats_search_exact_metadata" ? 0.95 : 1,
+    tonalConfidence: features.tonalConfidence,
+    source: features.source,
+    matchedTrack: {
+      spotifyId: candidate.spotifyId ?? spotifyId ?? "",
+      title: candidate.title,
+      artists: candidate.artists,
+      album: song.album ?? null,
+      isrc: candidate.isrc,
+      durationMs: candidate.durationMs,
+      spotifyUrl: candidate.spotifyId
+        ? `https://open.spotify.com/track/${candidate.spotifyId}`
+        : null,
+    },
+    reasonCodes: [
+      "catalogue_fallback_exact_match",
+      match.reasonCode,
+      "tonal_source_reccobeats",
+    ],
+  });
+  await saveToCacheBestEffort(song, result);
+  return result;
+}
+
 async function classifySong(song: SongInput): Promise<KeyLookupResult> {
   try {
     const cached = await findCached(song);
@@ -532,6 +600,26 @@ async function classifySong(song: SongInput): Promise<KeyLookupResult> {
     await saveToCacheBestEffort(song, result);
     return result;
   } catch (error) {
+    if (isSpotifyRateLimit(error)) {
+      try {
+        const fallback = await classifyWithReccoFallback(song);
+        if (fallback) {
+          console.info("[spotify_rate_limit_fallback]", "classified");
+          return fallback;
+        }
+        console.warn("[spotify_rate_limit_fallback]", "no_exact_match");
+      } catch (fallbackError) {
+        console.warn(
+          "[spotify_rate_limit_fallback]",
+          fallbackError instanceof Error
+            ? fallbackError.message
+            : String(fallbackError)
+        );
+      }
+      return baseResult(song, "error", {
+        reasonCodes: ["provider_rate_limited"],
+      });
+    }
     const reason =
       error instanceof Error && error.message === "spotify_not_configured"
         ? "spotify_not_configured"

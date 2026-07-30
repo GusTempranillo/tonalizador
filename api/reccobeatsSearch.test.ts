@@ -47,7 +47,9 @@ describe("findReccoSearchMatch", () => {
       )
     );
 
-    await expect(findReccoSearchMatch(reference, searchPage)).resolves.toEqual({
+    await expect(
+      findReccoSearchMatch(reference, searchPage)
+    ).resolves.toMatchObject({
       internalId: "recco-studio",
       reasonCode: "reccobeats_search_exact_spotify_id",
     });
@@ -72,7 +74,9 @@ describe("findReccoSearchMatch", () => {
       )
     );
 
-    await expect(findReccoSearchMatch(reference, searchPage)).resolves.toEqual({
+    await expect(
+      findReccoSearchMatch(reference, searchPage)
+    ).resolves.toMatchObject({
       internalId: "exact-isrc",
       reasonCode: "reccobeats_search_exact_isrc",
     });
@@ -93,8 +97,41 @@ describe("findReccoSearchMatch", () => {
       )
     );
 
-    await expect(findReccoSearchMatch(reference, searchPage)).resolves.toEqual({
+    await expect(
+      findReccoSearchMatch(reference, searchPage)
+    ).resolves.toMatchObject({
       internalId: "exact-metadata",
+      reasonCode: "reccobeats_search_exact_metadata",
+    });
+  });
+
+  it("identifica por título y artista aunque Spotify esté temporalmente inaccesible", async () => {
+    const searchPage = vi.fn().mockResolvedValue(
+      page(
+        [
+          {
+            id: "recco-only",
+            trackTitle: "Bohemian Rhapsody",
+            artists: [{ name: "Queen" }],
+            durationMs: 354_320,
+          },
+        ],
+        0,
+        1
+      )
+    );
+
+    await expect(
+      findReccoSearchMatch(
+        {
+          title: reference.title,
+          artists: reference.artists,
+          durationMs: reference.durationMs,
+        },
+        searchPage
+      )
+    ).resolves.toMatchObject({
+      internalId: "recco-only",
       reasonCode: "reccobeats_search_exact_metadata",
     });
   });

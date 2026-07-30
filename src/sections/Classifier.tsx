@@ -211,7 +211,9 @@ const REASON_LABELS: Record<string, string> = {
   tonal_features_missing: "Falta información de esta canción",
   no_catalogue_candidate: "No aparece en nuestra búsqueda",
   provider_temporarily_unavailable: "La búsqueda no respondió esta vez",
+  provider_rate_limited: "Spotify ha pedido una pausa temporal",
   spotify_not_configured: "La búsqueda no está disponible ahora",
+  catalogue_fallback_exact_match: "ReccoBeats confirmó exactamente la canción",
   spotify_audio_features_forbidden: "Spotify identificó la canción",
   spotify_audio_features_circuit_open: "Spotify identificó la canción",
   spotify_audio_features_unauthorized: "Spotify identificó la canción",
@@ -292,6 +294,9 @@ function describeResultProcess(result: KeyLookupResult): string {
     return "Spotify identificó la grabación y proporcionó sus datos tonales.";
   }
   if (result.source === "reccobeats") {
+    if (result.reasonCodes.includes("catalogue_fallback_exact_match")) {
+      return "Spotify pidió una pausa. ReccoBeats identificó exactamente la canción por sus datos y obtuvo la tonalidad.";
+    }
     return "Spotify identificó la canción. Tonalidad obtenida de ReccoBeats.";
   }
   if (result.source === "manual") {
