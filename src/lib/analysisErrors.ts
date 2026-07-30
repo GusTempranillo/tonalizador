@@ -35,7 +35,7 @@ export function incompleteAnalysisMessage(
   }
 
   if (reasons.has("provider_rate_limited")) {
-    return "Spotify ha pedido una pausa temporal. Tus canciones siguen guardadas. Espera unos minutos y pulsa «Reintentar» para continuar.";
+    return "Estrella, no has hecho nada mal. Spotify ha pausado temporalmente las consultas y ReccoBeats no ha podido confirmar una coincidencia exacta. Tus canciones siguen guardadas.";
   }
 
   if (reasons.has("provider_temporarily_unavailable")) {

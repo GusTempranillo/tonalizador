@@ -85,6 +85,8 @@ const Guide = lazy(() => import("@/sections/Guide"));
 
 const CHUNK_SIZE = 12;
 const STORAGE_KEY = "tonalizador-analysis-v2";
+const PROVIDER_PAUSE_KEY = "tonalizador-provider-pause-until";
+const PROVIDER_RETRY_DELAY_MS = 2 * 60 * 1000;
 const TUNEMY_MUSIC_EXPORT_URL =
   "https://www.tunemymusic.com/transfer/youtube-music-to-file";
 const TUNEMY_MUSIC_IMPORT_URL =
@@ -93,6 +95,15 @@ const TUNEMY_MUSIC_IMPORT_URL =
 type ReviewFilter = "needs_attention" | "all" | "manual";
 type DeliveryState = "ready" | "downloaded" | "finished";
 type SourceMode = "playlist" | "audio";
+
+function readProviderPauseUntil(): number | null {
+  try {
+    const value = Number(localStorage.getItem(PROVIDER_PAUSE_KEY));
+    return Number.isFinite(value) && value > Date.now() ? value : null;
+  } catch {
+    return null;
+  }
+}
 type AcousticJob = {
   state: "analyzing" | "complete" | "error";
   progress: number;
@@ -212,6 +223,10 @@ const REASON_LABELS: Record<string, string> = {
   no_catalogue_candidate: "No aparece en nuestra búsqueda",
   provider_temporarily_unavailable: "La búsqueda no respondió esta vez",
   provider_rate_limited: "Spotify ha pedido una pausa temporal",
+  reccobeats_fallback_no_exact_match:
+    "ReccoBeats no pudo confirmar esa grabación exacta",
+  reccobeats_fallback_unavailable:
+    "ReccoBeats no respondió en el intento alternativo",
   spotify_not_configured: "La búsqueda no está disponible ahora",
   catalogue_fallback_exact_match: "ReccoBeats confirmó exactamente la canción",
   spotify_audio_features_forbidden: "Spotify identificó la canción",
@@ -301,6 +316,12 @@ function describeResultProcess(result: KeyLookupResult): string {
   }
   if (result.source === "manual") {
     return "Esta tonalidad es una corrección explícita, no un resultado automático.";
+  }
+  if (result.reasonCodes.includes("reccobeats_fallback_no_exact_match")) {
+    return "Spotify pidió una pausa. ReccoBeats sí se consultó, pero no pudo confirmar esta grabación exacta.";
+  }
+  if (result.reasonCodes.includes("reccobeats_fallback_unavailable")) {
+    return "Spotify pidió una pausa y ReccoBeats no respondió en el intento alternativo.";
   }
   return "La búsqueda automática no obtuvo una tonalidad suficientemente fiable.";
 }
@@ -773,6 +794,55 @@ function AnalysisProcess() {
   );
 }
 
+function SpotifyPauseNotice({
+  reccoUnavailable,
+}: {
+  reccoUnavailable: boolean;
+}) {
+  return (
+    <section
+      className="spotify-pause-notice"
+      role="alert"
+      aria-labelledby="spotify-pause-title"
+    >
+      <div className="spotify-pause-heading">
+        <span aria-hidden="true">
+          <Clock3 />
+        </span>
+        <div>
+          <small>PARA ESTRELLA · NO SE HA PERDIDO NADA</small>
+          <h3 id="spotify-pause-title">Estrella, no has hecho nada mal.</h3>
+          <p>
+            Spotify ha detenido temporalmente las consultas automáticas.
+            Tonalizador sí ha probado después con ReccoBeats, pero{" "}
+            {reccoUnavailable
+              ? "ese servicio tampoco ha respondido."
+              : "no ha encontrado una coincidencia exacta y ha preferido no darte la tonalidad de otra grabación."}
+          </p>
+        </div>
+      </div>
+      <div className="spotify-pause-guidance">
+        <div>
+          <strong>Qué debes hacer ahora</strong>
+          <p>
+            Espera a que se active el botón —son dos minutos— y pulsa
+            «Reintentar» una sola vez. Si alguna canción sigue pendiente, usa
+            «Analizar audio» y elige su MP3 o archivo de audio.
+          </p>
+        </div>
+        <div className="is-warning">
+          <strong>Lo que nadie debe hacer</strong>
+          <p>
+            No pulses «Reintentar» varias veces, no recargues la página y no
+            vuelvas a importar el CSV para forzar la búsqueda. Cada nuevo
+            intento puede alargar la pausa; la lista ya está guardada.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function AnalysisSongRow({
   index,
   song,
@@ -939,6 +1009,7 @@ type AnalyzeChapterProps = {
   error: string | null;
   dragOver: boolean;
   pendingCount: number;
+  retryWaitSeconds: number;
   analysisComplete: boolean;
   acousticJobs: AcousticJobs;
   fileInput: RefObject<HTMLInputElement | null>;
@@ -972,6 +1043,7 @@ function AnalyzeChapter({
   error,
   dragOver,
   pendingCount,
+  retryWaitSeconds,
   analysisComplete,
   acousticJobs,
   fileInput,
@@ -1164,6 +1236,12 @@ function AnalyzeChapter({
         position: index,
       }));
     const needsAudioCount = results.filter(needsAcousticAnalysis).length;
+    const spotifyPaused = results.some(result =>
+      result.reasonCodes.includes("provider_rate_limited")
+    );
+    const reccoFallbackUnavailable = results.some(result =>
+      result.reasonCodes.includes("reccobeats_fallback_unavailable")
+    );
 
     return (
       <section className="chapter-stage analysis-results-stage">
@@ -1207,9 +1285,17 @@ function AnalyzeChapter({
                 </span>
               ) : null}
               {pendingCount > 0 ? (
-                <Button size="sm" onClick={onAnalyze}>
+                <Button
+                  size="sm"
+                  onClick={onAnalyze}
+                  disabled={spotifyPaused && retryWaitSeconds > 0}
+                >
                   <RefreshCw aria-hidden="true" />
-                  Reintentar las {pendingCount} pendientes
+                  {spotifyPaused && retryWaitSeconds > 0
+                    ? `Espera ${Math.ceil(retryWaitSeconds / 60)} min`
+                    : spotifyPaused
+                      ? "Reintentar una sola vez"
+                      : `Reintentar las ${pendingCount} pendientes`}
                 </Button>
               ) : analysisComplete ? (
                 <Button size="sm" onClick={onDownload}>
@@ -1227,7 +1313,9 @@ function AnalyzeChapter({
             </div>
           </header>
 
-          {error ? (
+          {spotifyPaused ? (
+            <SpotifyPauseNotice reccoUnavailable={reccoFallbackUnavailable} />
+          ) : error ? (
             <div className="friendly-error analysis-results-error" role="alert">
               <AlertCircle aria-hidden="true" />
               {error}
@@ -1984,6 +2072,16 @@ export default function Classifier() {
   } | null>(null);
   const [readingFile, setReadingFile] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [providerPauseUntil, setProviderPauseUntil] = useState<number | null>(
+    () =>
+      readProviderPauseUntil() ??
+      (savedInitial?.results.some(result =>
+        result.reasonCodes.includes("provider_rate_limited")
+      )
+        ? Date.now() + PROVIDER_RETRY_DELAY_MS
+        : null)
+  );
+  const [pauseClock, setPauseClock] = useState(Date.now);
   const [saveWarning, setSaveWarning] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -2040,6 +2138,29 @@ export default function Classifier() {
     );
     return () => window.cancelAnimationFrame(focusStage);
   }, [chapter, view]);
+
+  useEffect(() => {
+    if (!providerPauseUntil) return;
+    try {
+      localStorage.setItem(PROVIDER_PAUSE_KEY, String(providerPauseUntil));
+    } catch {
+      // La espera visual sigue funcionando aunque no se pueda guardar.
+    }
+    const updateClock = () => setPauseClock(Date.now());
+    updateClock();
+    const timer = window.setInterval(updateClock, 1_000);
+    return () => window.clearInterval(timer);
+  }, [providerPauseUntil]);
+
+  useEffect(() => {
+    if (!providerPauseUntil || pauseClock < providerPauseUntil) return;
+    setProviderPauseUntil(null);
+    try {
+      localStorage.removeItem(PROVIDER_PAUSE_KEY);
+    } catch {
+      // El botón puede reactivarse aunque el almacenamiento no esté disponible.
+    }
+  }, [pauseClock, providerPauseUntil]);
 
   useEffect(() => {
     const background = document.querySelector<HTMLElement>(".app-main");
@@ -2147,6 +2268,7 @@ export default function Classifier() {
     fileReadId.current += 1;
     try {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(PROVIDER_PAUSE_KEY);
     } catch {
       // The in-memory state can still be cleared when storage is unavailable.
     }
@@ -2168,6 +2290,7 @@ export default function Classifier() {
     setAcousticJobs({});
     setReviewFilter("all");
     setResetOpen(false);
+    setProviderPauseUntil(null);
     setChapter("export");
   }, []);
 
@@ -2187,6 +2310,7 @@ export default function Classifier() {
 
   const analyze = async () => {
     if (!songs || pendingSongs.length === 0) return;
+    if (providerPauseUntil && providerPauseUntil > Date.now()) return;
     setError(null);
     setProgress({ done: 0, total: pendingSongs.length });
     const resultMap = new Map(results.map(result => [result.inputId, result]));
@@ -2213,6 +2337,20 @@ export default function Classifier() {
           return result ? [result] : [];
         });
         setError(incompleteAnalysisMessage(remaining.length, remainingResults));
+        if (
+          remainingResults.some(result =>
+            result.reasonCodes.includes("provider_rate_limited")
+          )
+        ) {
+          const pauseUntil = Date.now() + PROVIDER_RETRY_DELAY_MS;
+          setProviderPauseUntil(pauseUntil);
+          setPauseClock(Date.now());
+          try {
+            localStorage.setItem(PROVIDER_PAUSE_KEY, String(pauseUntil));
+          } catch {
+            // La espera visual sigue funcionando aunque no se pueda guardar.
+          }
+        }
       }
     } catch (analysisError) {
       console.error("[analysis_request_failed]", analysisError);
@@ -2524,6 +2662,14 @@ export default function Classifier() {
                 error={error}
                 dragOver={dragOver}
                 pendingCount={pendingSongs.length}
+                retryWaitSeconds={
+                  providerPauseUntil
+                    ? Math.max(
+                        0,
+                        Math.ceil((providerPauseUntil - pauseClock) / 1_000)
+                      )
+                    : 0
+                }
                 analysisComplete={analysisComplete}
                 acousticJobs={acousticJobs}
                 fileInput={fileInput}

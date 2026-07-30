@@ -601,6 +601,7 @@ async function classifySong(song: SongInput): Promise<KeyLookupResult> {
     return result;
   } catch (error) {
     if (isSpotifyRateLimit(error)) {
+      let fallbackReason = "reccobeats_fallback_no_exact_match";
       try {
         const fallback = await classifyWithReccoFallback(song);
         if (fallback) {
@@ -609,6 +610,7 @@ async function classifySong(song: SongInput): Promise<KeyLookupResult> {
         }
         console.warn("[spotify_rate_limit_fallback]", "no_exact_match");
       } catch (fallbackError) {
+        fallbackReason = "reccobeats_fallback_unavailable";
         console.warn(
           "[spotify_rate_limit_fallback]",
           fallbackError instanceof Error
@@ -617,7 +619,7 @@ async function classifySong(song: SongInput): Promise<KeyLookupResult> {
         );
       }
       return baseResult(song, "error", {
-        reasonCodes: ["provider_rate_limited"],
+        reasonCodes: ["provider_rate_limited", fallbackReason],
       });
     }
     const reason =
