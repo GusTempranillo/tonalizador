@@ -85,8 +85,8 @@ const Guide = lazy(() => import("@/sections/Guide"));
 
 const CHUNK_SIZE = 12;
 const STORAGE_KEY = "tonalizador-analysis-v2";
-const PROVIDER_PAUSE_KEY = "tonalizador-provider-pause-until";
-const PROVIDER_RETRY_DELAY_MS = 2 * 60 * 1000;
+const PROVIDER_PAUSE_KEY = "tonalizador-provider-pause-until-v2";
+const PROVIDER_RETRY_DELAY_MS = 23_501 * 1000;
 const TUNEMY_MUSIC_EXPORT_URL =
   "https://www.tunemymusic.com/transfer/youtube-music-to-file";
 const TUNEMY_MUSIC_IMPORT_URL =
@@ -99,10 +99,17 @@ type SourceMode = "playlist" | "audio";
 function readProviderPauseUntil(): number | null {
   try {
     const value = Number(localStorage.getItem(PROVIDER_PAUSE_KEY));
-    return Number.isFinite(value) && value > Date.now() ? value : null;
+    return Number.isFinite(value) && value > 0 ? value : null;
   } catch {
     return null;
   }
+}
+
+function retryWaitLabel(seconds: number): string {
+  const hours = Math.floor(seconds / 3_600);
+  const minutes = Math.ceil((seconds % 3_600) / 60);
+  if (hours > 0) return `${hours} h ${minutes} min`;
+  return `${Math.max(1, minutes)} min`;
 }
 type AcousticJob = {
   state: "analyzing" | "complete" | "error";
@@ -222,7 +229,7 @@ const REASON_LABELS: Record<string, string> = {
   tonal_features_missing: "Falta información de esta canción",
   no_catalogue_candidate: "No aparece en nuestra búsqueda",
   provider_temporarily_unavailable: "La búsqueda no respondió esta vez",
-  provider_rate_limited: "Spotify ha pedido una pausa temporal",
+  provider_rate_limited: "Spotify ha respondido QUOTA_EXCEEDED",
   reccobeats_fallback_no_exact_match:
     "ReccoBeats no pudo confirmar esa grabación exacta",
   reccobeats_fallback_unavailable:
@@ -318,10 +325,10 @@ function describeResultProcess(result: KeyLookupResult): string {
     return "Esta tonalidad es una corrección explícita, no un resultado automático.";
   }
   if (result.reasonCodes.includes("reccobeats_fallback_no_exact_match")) {
-    return "Spotify pidió una pausa. ReccoBeats sí se consultó, pero no pudo confirmar esta grabación exacta.";
+    return "Spotify respondió QUOTA_EXCEEDED. ReccoBeats sí se consultó, pero no pudo confirmar esta grabación exacta.";
   }
   if (result.reasonCodes.includes("reccobeats_fallback_unavailable")) {
-    return "Spotify pidió una pausa y ReccoBeats no respondió en el intento alternativo.";
+    return "Spotify respondió QUOTA_EXCEEDED y ReccoBeats no respondió en el intento alternativo.";
   }
   return "La búsqueda automática no obtuvo una tonalidad suficientemente fiable.";
 }
@@ -810,11 +817,11 @@ function SpotifyPauseNotice({
           <Clock3 />
         </span>
         <div>
-          <small>PARA ESTRELLA · NO SE HA PERDIDO NADA</small>
+          <small>QUOTA_EXCEEDED · NO SE HA PERDIDO NADA</small>
           <h3 id="spotify-pause-title">Estrella, no has hecho nada mal.</h3>
           <p>
-            Spotify ha detenido temporalmente las consultas automáticas.
-            Tonalizador sí ha probado después con ReccoBeats, pero{" "}
+            Spotify ha respondido <strong>QUOTA_EXCEEDED</strong>. Tonalizador
+            sí ha probado después con ReccoBeats, pero{" "}
             {reccoUnavailable
               ? "ese servicio tampoco ha respondido."
               : "no ha encontrado una coincidencia exacta y ha preferido no darte la tonalidad de otra grabación."}
@@ -825,9 +832,10 @@ function SpotifyPauseNotice({
         <div>
           <strong>Qué debes hacer ahora</strong>
           <p>
-            Espera a que se active el botón —son dos minutos— y pulsa
-            «Reintentar» una sola vez. Si alguna canción sigue pendiente, usa
-            «Analizar audio» y elige su MP3 o archivo de audio.
+            Spotify exige respetar el <strong>Retry-After completo</strong>:
+            23.501 segundos, unas 6 horas y 32 minutos. Cuando se active el
+            botón, pulsa «Reintentar» una sola vez. Si alguna canción sigue
+            pendiente, usa «Analizar audio».
           </p>
         </div>
         <div className="is-warning">
@@ -1292,7 +1300,7 @@ function AnalyzeChapter({
                 >
                   <RefreshCw aria-hidden="true" />
                   {spotifyPaused && retryWaitSeconds > 0
-                    ? `Espera ${Math.ceil(retryWaitSeconds / 60)} min`
+                    ? `Espera ${retryWaitLabel(retryWaitSeconds)}`
                     : spotifyPaused
                       ? "Reintentar una sola vez"
                       : `Reintentar las ${pendingCount} pendientes`}
@@ -2155,11 +2163,7 @@ export default function Classifier() {
   useEffect(() => {
     if (!providerPauseUntil || pauseClock < providerPauseUntil) return;
     setProviderPauseUntil(null);
-    try {
-      localStorage.removeItem(PROVIDER_PAUSE_KEY);
-    } catch {
-      // El botón puede reactivarse aunque el almacenamiento no esté disponible.
-    }
+    // Conservamos la marca vencida para que una recarga no reinicie la espera.
   }, [pauseClock, providerPauseUntil]);
 
   useEffect(() => {

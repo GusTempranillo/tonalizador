@@ -56,8 +56,11 @@ describe("analysis error messages", () => {
   });
 
   it("explains how to resume after Spotify rate limiting", () => {
-    expect(
-      incompleteAnalysisMessage(2, [failedResult("provider_rate_limited")])
-    ).toContain("Estrella, no has hecho nada mal");
+    const message = incompleteAnalysisMessage(2, [
+      failedResult("provider_rate_limited"),
+    ]);
+    expect(message).toContain("QUOTA_EXCEEDED");
+    expect(message).toContain("23.501 segundos");
+    expect(message).toContain("6 horas y 32 minutos");
   });
 });

@@ -54,10 +54,9 @@ function retryAfterMs(response: Response, attempt: number): number {
   const header = response.headers.get("retry-after");
   if (header) {
     const seconds = Number(header);
-    if (Number.isFinite(seconds)) return Math.min(seconds * 1000, 30_000);
+    if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
     const date = Date.parse(header);
-    if (Number.isFinite(date))
-      return Math.min(Math.max(0, date - Date.now()), 30_000);
+    if (Number.isFinite(date)) return Math.max(0, date - Date.now());
   }
   return Math.min(
     500 * 2 ** (attempt - 1) + Math.floor(Math.random() * 250),

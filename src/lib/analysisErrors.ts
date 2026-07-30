@@ -35,7 +35,7 @@ export function incompleteAnalysisMessage(
   }
 
   if (reasons.has("provider_rate_limited")) {
-    return "Estrella, no has hecho nada mal. Spotify ha pausado temporalmente las consultas y ReccoBeats no ha podido confirmar una coincidencia exacta. Tus canciones siguen guardadas.";
+    return "Estrella, no has hecho nada mal. Spotify ha respondido QUOTA_EXCEEDED y exige respetar el Retry-After completo: 23.501 segundos, unas 6 horas y 32 minutos. Tus canciones siguen guardadas.";
   }
 
   if (reasons.has("provider_temporarily_unavailable")) {

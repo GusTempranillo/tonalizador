@@ -70,7 +70,7 @@ describe("providerFetch", () => {
     const limitedFetch = vi.fn<typeof fetch>().mockResolvedValue(
       new Response("limit", {
         status: 429,
-        headers: { "Retry-After": "30" },
+        headers: { "Retry-After": "23501" },
       })
     );
     await providerFetch(
@@ -94,6 +94,9 @@ describe("providerFetch", () => {
 
     expect(response.status).toBe(429);
     expect(response.headers.get("X-Provider-Cooldown")).toBe("active");
+    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThanOrEqual(
+      23_500
+    );
     expect(nextFetch).not.toHaveBeenCalled();
   });
 
