@@ -250,7 +250,7 @@
       0 34px 90px rgba(0, 0, 0, 0.34);
   }
 
-  .home-artwork > img {
+  .home-artwork > picture > img {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -4493,7 +4493,7 @@
     transform: rotate(-5deg);
   }
 
-  .home-artwork > img,
+  .home-artwork > picture,
   .home-step-nav {
     display: none;
   }

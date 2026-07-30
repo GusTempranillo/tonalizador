@@ -429,14 +429,21 @@ function HomeHero({
         <h1 id="home-title" className="sr-only">
           Tonalizador. Tu música, ordenada por tonalidad.
         </h1>
-        <img
-          src="/og.png"
-          alt="Tonalizador. Tu música, ordenada por tonalidad."
-          width="1734"
-          height="907"
-          loading="eager"
-          fetchPriority="high"
-        />
+        <picture>
+          <source
+            media="(min-width: 621px)"
+            srcSet="/cover.webp"
+            type="image/webp"
+          />
+          <img
+            src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+            alt="Tonalizador. Tu música, ordenada por tonalidad."
+            width="1734"
+            height="907"
+            loading="eager"
+            fetchPriority="high"
+          />
+        </picture>
         <nav className="home-step-nav" aria-label="Pasos principales">
           {NAV_ITEMS.map(item => (
             <button
