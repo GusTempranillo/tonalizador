@@ -802,9 +802,9 @@ function AnalysisProcess() {
 }
 
 function SpotifyPauseNotice({
-  reccoUnavailable,
+  reccoStatus,
 }: {
-  reccoUnavailable: boolean;
+  reccoStatus: "not_attempted" | "no_exact_match" | "unavailable";
 }) {
   return (
     <section
@@ -820,11 +820,12 @@ function SpotifyPauseNotice({
           <small>QUOTA_EXCEEDED · NO SE HA PERDIDO NADA</small>
           <h3 id="spotify-pause-title">Estrella, no has hecho nada mal.</h3>
           <p>
-            Spotify ha respondido <strong>QUOTA_EXCEEDED</strong>. Tonalizador
-            sí ha probado después con ReccoBeats, pero{" "}
-            {reccoUnavailable
-              ? "ese servicio tampoco ha respondido."
-              : "no ha encontrado una coincidencia exacta y ha preferido no darte la tonalidad de otra grabación."}
+            Spotify ha respondido <strong>QUOTA_EXCEEDED</strong>.{" "}
+            {reccoStatus === "not_attempted"
+              ? "Mientras dure esta restricción, Tonalizador no puede iniciar otra búsqueda automática y no ha enviado estas canciones."
+              : reccoStatus === "unavailable"
+                ? "Tonalizador sí ha probado después con ReccoBeats, pero ese servicio tampoco ha respondido."
+                : "Tonalizador sí ha probado después con ReccoBeats, pero no ha encontrado una coincidencia exacta y ha preferido no darte la tonalidad de otra grabación."}
           </p>
         </div>
       </div>
@@ -1018,6 +1019,7 @@ type AnalyzeChapterProps = {
   dragOver: boolean;
   pendingCount: number;
   retryWaitSeconds: number;
+  showProviderPauseNotice: boolean;
   analysisComplete: boolean;
   acousticJobs: AcousticJobs;
   fileInput: RefObject<HTMLInputElement | null>;
@@ -1052,6 +1054,7 @@ function AnalyzeChapter({
   dragOver,
   pendingCount,
   retryWaitSeconds,
+  showProviderPauseNotice,
   analysisComplete,
   acousticJobs,
   fileInput,
@@ -1322,7 +1325,11 @@ function AnalyzeChapter({
           </header>
 
           {spotifyPaused ? (
-            <SpotifyPauseNotice reccoUnavailable={reccoFallbackUnavailable} />
+            <SpotifyPauseNotice
+              reccoStatus={
+                reccoFallbackUnavailable ? "unavailable" : "no_exact_match"
+              }
+            />
           ) : error ? (
             <div className="friendly-error analysis-results-error" role="alert">
               <AlertCircle aria-hidden="true" />
@@ -1375,7 +1382,9 @@ function AnalyzeChapter({
               ? `${duplicateCount} repetidas se han apartado para no crear copias.`
               : "No necesitas revisar nada antes de continuar."}
           </p>
-          {error ? (
+          {showProviderPauseNotice ? (
+            <SpotifyPauseNotice reccoStatus="not_attempted" />
+          ) : error ? (
             <div className="friendly-error ready-error" role="alert">
               <AlertCircle aria-hidden="true" />
               {error}
@@ -1383,13 +1392,21 @@ function AnalyzeChapter({
           ) : null}
 
           <div className="stage-actions">
-            <Button size="lg" onClick={onAnalyze}>
-              {error ? (
+            <Button
+              size="lg"
+              onClick={onAnalyze}
+              disabled={showProviderPauseNotice && retryWaitSeconds > 0}
+            >
+              {error || showProviderPauseNotice ? (
                 <RefreshCw aria-hidden="true" />
               ) : (
                 <Sparkles aria-hidden="true" />
               )}
-              {error ? "Volver a intentarlo" : "Analizar mis canciones"}
+              {showProviderPauseNotice && retryWaitSeconds > 0
+                ? `Espera ${retryWaitLabel(retryWaitSeconds)}`
+                : error
+                  ? "Volver a intentarlo"
+                  : "Analizar mis canciones"}
             </Button>
             <button
               type="button"
@@ -2090,6 +2107,7 @@ export default function Classifier() {
         : null)
   );
   const [pauseClock, setPauseClock] = useState(Date.now);
+  const [pauseNoticeVisible, setPauseNoticeVisible] = useState(false);
   const [saveWarning, setSaveWarning] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -2163,6 +2181,7 @@ export default function Classifier() {
   useEffect(() => {
     if (!providerPauseUntil || pauseClock < providerPauseUntil) return;
     setProviderPauseUntil(null);
+    setPauseNoticeVisible(false);
     // Conservamos la marca vencida para que una recarga no reinicie la espera.
   }, [pauseClock, providerPauseUntil]);
 
@@ -2295,6 +2314,7 @@ export default function Classifier() {
     setReviewFilter("all");
     setResetOpen(false);
     setProviderPauseUntil(null);
+    setPauseNoticeVisible(false);
     setChapter("export");
   }, []);
 
@@ -2314,7 +2334,11 @@ export default function Classifier() {
 
   const analyze = async () => {
     if (!songs || pendingSongs.length === 0) return;
-    if (providerPauseUntil && providerPauseUntil > Date.now()) return;
+    if (providerPauseUntil && providerPauseUntil > Date.now()) {
+      setPauseNoticeVisible(true);
+      return;
+    }
+    setPauseNoticeVisible(false);
     setError(null);
     setProgress({ done: 0, total: pendingSongs.length });
     const resultMap = new Map(results.map(result => [result.inputId, result]));
@@ -2674,6 +2698,7 @@ export default function Classifier() {
                       )
                     : 0
                 }
+                showProviderPauseNotice={pauseNoticeVisible}
                 analysisComplete={analysisComplete}
                 acousticJobs={acousticJobs}
                 fileInput={fileInput}
