@@ -137,6 +137,57 @@ function createLocalSong(file: File): SongInput {
   };
 }
 
+function columnExample(
+  parsed: ParsedCsv,
+  column: string | null
+): string | null {
+  if (!column) return null;
+  for (const row of parsed.rows) {
+    const value = row[column]?.trim();
+    if (value) return value;
+  }
+  return null;
+}
+
+function columnMappingWarning(
+  parsed: ParsedCsv,
+  columns: SongColumns
+): string | null {
+  if (!columns.title || !columns.artist) return null;
+  if (columns.title === columns.artist) {
+    return "La canción y el artista no pueden estar en la misma columna. Elige una columna distinta en cada menú.";
+  }
+
+  const titleHeader = columns.title.toLocaleLowerCase("es");
+  const artistHeader = columns.artist.toLocaleLowerCase("es");
+  if (/playlist|lista de reproducción/.test(titleHeader)) {
+    return `«${columns.title}» contiene el nombre de la playlist, no el título de cada canción. En el primer menú busca una columna como «Track name», «Song» o «Title».`;
+  }
+  if (/url|uri|enlace|link/.test(titleHeader)) {
+    return `«${columns.title}» parece contener enlaces. En el primer menú elige la columna que muestra los títulos de las canciones.`;
+  }
+  if (/artist|artista|performer/.test(titleHeader)) {
+    return `«${columns.title}» parece ser una columna de artistas. En el primer menú elige la columna con los títulos de las canciones.`;
+  }
+  if (/playlist|lista de reproducción/.test(artistHeader)) {
+    return `«${columns.artist}» contiene el nombre de la playlist. En el segundo menú busca una columna como «Artist name» o «Artist».`;
+  }
+  if (/url|uri|enlace|link/.test(artistHeader)) {
+    return `«${columns.artist}» parece contener enlaces. En el segundo menú elige la columna con el cantante o grupo.`;
+  }
+
+  const titleValues = parsed.rows
+    .map(row => row[columns.title!]?.trim())
+    .filter(Boolean);
+  if (
+    titleValues.length >= 3 &&
+    new Set(titleValues.map(value => value.toLocaleLowerCase("es"))).size === 1
+  ) {
+    return `Todos los valores de «${columns.title}» son iguales. Probablemente esa no sea la columna de canciones: busca una que muestre un título diferente en cada fila.`;
+  }
+  return null;
+}
+
 const STATUS_LABELS: Record<ClassificationStatus, string> = {
   classified: "Lista",
   review: "Confirma esta",
@@ -890,6 +941,7 @@ type AnalyzeChapterProps = {
   onDragLeave: () => void;
   onDrop: (event: DragEvent<HTMLButtonElement>) => void;
   onColumns: (columns: SongColumns) => void;
+  onConfirmColumns: () => void;
   onAnalyze: () => void;
   onAnalyzeAudio: (
     song: SongInput,
@@ -922,6 +974,7 @@ function AnalyzeChapter({
   onDragLeave,
   onDrop,
   onColumns,
+  onConfirmColumns,
   onAnalyze,
   onAnalyzeAudio,
   onChooseAudio,
@@ -1289,6 +1342,12 @@ function AnalyzeChapter({
   }
 
   if (parsed && columns) {
+    const titleExample = columnExample(parsed, columns.title);
+    const artistExample = columnExample(parsed, columns.artist);
+    const mappingWarning = columnMappingWarning(parsed, columns);
+    const canContinue =
+      Boolean(columns.title && columns.artist) && mappingWarning === null;
+
     return (
       <section className="chapter-stage mapping-stage">
         <div className="mapping-copy">
@@ -1298,49 +1357,113 @@ function AnalyzeChapter({
           <p className="stage-kicker">Un pequeño ajuste</p>
           <h2>Ayúdanos a leer este archivo.</h2>
           <p>
-            Indica dónde están el nombre de la canción y el artista. Solo
-            tendrás que hacerlo una vez.
+            El archivo está bien, pero sus encabezados tienen nombres que no
+            reconocemos. Solo tienes que indicarnos qué columna contiene cada
+            dato; no necesitas editar el CSV.
           </p>
+          <div className="mapping-copy-tip">
+            <Info aria-hidden="true" />
+            <span>
+              <strong>Importante:</strong> «Playlist name» es el nombre de la
+              lista completa. No es el nombre de la canción.
+            </span>
+          </div>
         </div>
         <div className="mapping-panel">
-          <label>
-            <span>Nombre de la canción</span>
-            <Select
-              value={columns.title ?? ""}
-              onValueChange={value => onColumns({ ...columns, title: value })}
-            >
-              <SelectTrigger aria-label="Columna del nombre de la canción">
-                <SelectValue placeholder="Elegir" />
-              </SelectTrigger>
-              <SelectContent>
-                {parsed.headers.map(header => (
-                  <SelectItem key={header} value={header}>
-                    {header}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-          <label>
-            <span>Artista</span>
-            <Select
-              value={columns.artist ?? ""}
-              onValueChange={value => onColumns({ ...columns, artist: value })}
-            >
-              <SelectTrigger aria-label="Columna del artista">
-                <SelectValue placeholder="Elegir" />
-              </SelectTrigger>
-              <SelectContent>
-                {parsed.headers.map(header => (
-                  <SelectItem key={header} value={header}>
-                    {header}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
+          <div className="mapping-guidance">
+            <strong>Haz estas dos elecciones</strong>
+            <span>
+              Después podrás comprobar un ejemplo real antes de continuar.
+            </span>
+          </div>
+
+          <div className="mapping-field">
+            <label>
+              <span className="mapping-field-copy">
+                <b>1</b>
+                <span>
+                  <strong>Título de la canción</strong>
+                  <small>Suele llamarse «Track name», «Song» o «Title».</small>
+                </span>
+              </span>
+              <Select
+                value={columns.title ?? ""}
+                onValueChange={value => onColumns({ ...columns, title: value })}
+              >
+                <SelectTrigger aria-label="Columna del nombre de la canción">
+                  <SelectValue placeholder="Elegir columna" />
+                </SelectTrigger>
+                <SelectContent>
+                  {parsed.headers.map(header => (
+                    <SelectItem key={header} value={header}>
+                      {header}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            {titleExample ? (
+              <div className="mapping-example">
+                <span>Ejemplo encontrado en esa columna</span>
+                <strong>«{titleExample}»</strong>
+                <small>¿Esto es el título de una canción?</small>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mapping-field">
+            <label>
+              <span className="mapping-field-copy">
+                <b>2</b>
+                <span>
+                  <strong>Cantante o grupo</strong>
+                  <small>Suele llamarse «Artist name» o «Artist».</small>
+                </span>
+              </span>
+              <Select
+                value={columns.artist ?? ""}
+                onValueChange={value =>
+                  onColumns({ ...columns, artist: value })
+                }
+              >
+                <SelectTrigger aria-label="Columna del artista">
+                  <SelectValue placeholder="Elegir columna" />
+                </SelectTrigger>
+                <SelectContent>
+                  {parsed.headers.map(header => (
+                    <SelectItem key={header} value={header}>
+                      {header}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            {artistExample ? (
+              <div className="mapping-example">
+                <span>Ejemplo encontrado en esa columna</span>
+                <strong>«{artistExample}»</strong>
+                <small>¿Esto es el nombre de un cantante o grupo?</small>
+              </div>
+            ) : null}
+          </div>
+
+          {mappingWarning ? (
+            <div className="mapping-warning" role="alert">
+              <AlertCircle aria-hidden="true" />
+              <span>
+                <strong>Revisa estas elecciones.</strong>
+                {mappingWarning}
+              </span>
+            </div>
+          ) : null}
+
+          <Button size="lg" onClick={onConfirmColumns} disabled={!canContinue}>
+            <Check aria-hidden="true" />
+            Continuar con estas columnas
+          </Button>
           <p>
-            Cuando elijas ambas, prepararemos las canciones automáticamente.
+            No cambiaremos el archivo. Solo usaremos estas dos columnas para
+            preparar las canciones.
           </p>
         </div>
       </section>
@@ -1982,7 +2105,11 @@ export default function Classifier() {
         if (requestId !== fileReadId.current) return;
         setParsed(next);
         setColumns(next.columns);
-        if (next.columns.title && next.columns.artist) {
+        if (
+          next.columns.title &&
+          next.columns.artist &&
+          columnMappingWarning(next, next.columns) === null
+        ) {
           applyExtractedSongs(next, next.columns);
         } else {
           setSongs(null);
@@ -2005,13 +2132,16 @@ export default function Classifier() {
 
   const applyColumns = (nextColumns: SongColumns) => {
     setColumns(nextColumns);
+  };
+
+  const confirmColumns = () => {
     if (
       parsed &&
-      nextColumns.title &&
-      nextColumns.artist &&
-      nextColumns.title !== nextColumns.artist
+      columns?.title &&
+      columns.artist &&
+      columnMappingWarning(parsed, columns) === null
     ) {
-      applyExtractedSongs(parsed, nextColumns);
+      applyExtractedSongs(parsed, columns);
     }
   };
 
@@ -2406,6 +2536,7 @@ export default function Classifier() {
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onColumns={applyColumns}
+                onConfirmColumns={confirmColumns}
                 onAnalyze={() => void analyze()}
                 onAnalyzeAudio={(song, result, file) =>
                   void analyzeLocalAudio(song, result, file)

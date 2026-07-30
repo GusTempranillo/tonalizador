@@ -1744,6 +1744,34 @@
     max-width: 520px;
   }
 
+  .mapping-copy-tip {
+    display: flex;
+    max-width: 500px;
+    align-items: flex-start;
+    gap: 9px;
+    margin-top: 24px;
+    padding: 12px 14px;
+    border: 1px solid rgba(245, 158, 11, 0.14);
+    border-radius: 13px;
+    background: rgba(245, 158, 11, 0.045);
+    color: #8f806c;
+    font-size: 10px;
+    line-height: 1.55;
+  }
+
+  .mapping-copy-tip svg {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    margin-top: 1px;
+    color: #d5a45f;
+  }
+
+  .mapping-copy-tip strong {
+    color: #cbb38e;
+    font-weight: 650;
+  }
+
   .mapping-icon {
     display: grid;
     place-items: center;
@@ -1764,7 +1792,7 @@
   .mapping-panel {
     display: flex;
     width: 100%;
-    max-width: 520px;
+    max-width: 570px;
     justify-self: center;
     padding: 27px;
     border: 1px solid rgba(255, 255, 255, 0.075);
@@ -1772,7 +1800,33 @@
     background: rgba(255, 255, 255, 0.025);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
+  }
+
+  .mapping-guidance {
+    display: flex;
+    padding: 0 2px 4px;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mapping-guidance strong {
+    color: #d6d1dc;
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .mapping-guidance span {
+    color: #726d79;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .mapping-field {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.018);
   }
 
   .mapping-panel label {
@@ -1781,20 +1835,119 @@
     align-items: center;
     gap: 18px;
     min-height: 68px;
-    padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    background: rgba(255, 255, 255, 0.02);
+    padding: 12px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
   }
 
-  .mapping-panel label > span {
-    color: #b9b4c2;
+  .mapping-field-copy {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 9px;
+  }
+
+  .mapping-field-copy > b {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    background: rgba(139, 92, 246, 0.12);
+    color: #ad91eb;
+    font-size: 9px;
+  }
+
+  .mapping-field-copy > span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mapping-field-copy strong {
+    color: #c8c2ce;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 650;
+  }
+
+  .mapping-field-copy small {
+    color: #716b77;
+    font-size: 8px;
+    font-weight: 400;
+    line-height: 1.4;
   }
 
   .mapping-panel [data-slot="select-trigger"] {
     width: 100%;
+  }
+
+  .mapping-example {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: 3px 12px;
+    padding: 9px 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(59, 130, 246, 0.025);
+  }
+
+  .mapping-example span,
+  .mapping-example small {
+    color: #666d77;
+    font-size: 8px;
+  }
+
+  .mapping-example strong {
+    overflow: hidden;
+    color: #9fb3cb;
+    font-size: 10px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mapping-example small {
+    grid-column: 2;
+  }
+
+  .mapping-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 11px 12px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 13px;
+    background: rgba(245, 158, 11, 0.065);
+    color: #b49365;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .mapping-warning > svg {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    margin-top: 1px;
+    color: #e2a956;
+  }
+
+  .mapping-warning > span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .mapping-warning strong {
+    color: #d7b27c;
+    font-weight: 650;
+  }
+
+  .mapping-panel > [data-slot="button"] {
+    width: 100%;
+    margin-top: 2px;
   }
 
   .mapping-panel > p {
@@ -4636,6 +4789,15 @@
   .mapping-panel label {
     grid-template-columns: 1fr;
     gap: 9px;
+  }
+
+  .mapping-example {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .mapping-example small {
+    grid-column: 1;
   }
 
   .group-preview-list {
