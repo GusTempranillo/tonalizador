@@ -1744,34 +1744,6 @@
     max-width: 520px;
   }
 
-  .mapping-copy-tip {
-    display: flex;
-    max-width: 500px;
-    align-items: flex-start;
-    gap: 9px;
-    margin-top: 24px;
-    padding: 12px 14px;
-    border: 1px solid rgba(245, 158, 11, 0.14);
-    border-radius: 13px;
-    background: rgba(245, 158, 11, 0.045);
-    color: #8f806c;
-    font-size: 10px;
-    line-height: 1.55;
-  }
-
-  .mapping-copy-tip svg {
-    flex: 0 0 auto;
-    width: 14px;
-    height: 14px;
-    margin-top: 1px;
-    color: #d5a45f;
-  }
-
-  .mapping-copy-tip strong {
-    color: #cbb38e;
-    font-weight: 650;
-  }
-
   .mapping-icon {
     display: grid;
     place-items: center;

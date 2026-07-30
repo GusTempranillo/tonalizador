@@ -1361,13 +1361,6 @@ function AnalyzeChapter({
             reconocemos. Solo tienes que indicarnos qué columna contiene cada
             dato; no necesitas editar el CSV.
           </p>
-          <div className="mapping-copy-tip">
-            <Info aria-hidden="true" />
-            <span>
-              <strong>Importante:</strong> «Playlist name» es el nombre de la
-              lista completa. No es el nombre de la canción.
-            </span>
-          </div>
         </div>
         <div className="mapping-panel">
           <div className="mapping-guidance">
