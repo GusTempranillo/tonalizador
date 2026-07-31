@@ -262,6 +262,51 @@
     display: none;
   }
 
+  .home-tutorial-link {
+    position: absolute;
+    z-index: 4;
+    top: clamp(16px, 3vh, 32px);
+    right: clamp(16px, 3vw, 44px);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid rgba(196, 181, 253, 0.24);
+    border-radius: 13px;
+    background: rgba(20, 18, 31, 0.76);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+    color: #d9d2e8;
+    font-size: 11px;
+    font-weight: 650;
+    text-decoration: none;
+    backdrop-filter: blur(16px);
+    transition:
+      color 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease,
+      transform 180ms ease;
+  }
+
+  .home-tutorial-link:hover {
+    border-color: rgba(196, 181, 253, 0.5);
+    background: rgba(124, 58, 237, 0.18);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .home-tutorial-link svg:first-child {
+    width: 15px;
+    height: 15px;
+    color: #a78bfa;
+  }
+
+  .home-tutorial-link svg:last-child {
+    width: 11px;
+    height: 11px;
+    color: #817a8e;
+  }
+
   .home-step-nav {
     position: absolute;
     z-index: 2;
@@ -2902,13 +2947,19 @@
     height: 15px;
   }
 
-  .help-tabs {
+  .help-navigation {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 2fr) minmax(98px, 0.7fr);
     gap: 5px;
     padding: 12px 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     background: rgba(10, 11, 16, 0.18);
+  }
+
+  .help-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
   }
 
   .help-tabs button {
@@ -2941,6 +2992,40 @@
   .help-tabs svg {
     width: 13px;
     height: 13px;
+  }
+
+  .help-tutorial-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 8px;
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-radius: 11px;
+    background: rgba(139, 92, 246, 0.08);
+    color: #c5b6e7;
+    font-size: 9px;
+    font-weight: 650;
+    text-decoration: none;
+    transition: 180ms ease;
+  }
+
+  .help-tutorial-link:hover {
+    border-color: rgba(167, 139, 250, 0.38);
+    background: rgba(139, 92, 246, 0.16);
+    color: #eee9f8;
+  }
+
+  .help-tutorial-link svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .help-tutorial-link svg:last-child {
+    width: 10px;
+    height: 10px;
+    color: #817a8e;
   }
 
   .help-content {
@@ -4918,6 +5003,14 @@
 
   .help-header {
     padding-top: 23px;
+  }
+
+  .help-navigation {
+    grid-template-columns: 1fr;
+  }
+
+  .help-tutorial-link {
+    min-height: 36px;
   }
 
   .review-toolbar {

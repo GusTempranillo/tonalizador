@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu música esconde un secreto — El viaje interactivo del Tonalizador</title>
+<meta name="description" content="Una experiencia interactiva para entender qué es una tonalidad, cómo la detecta el Tonalizador y por qué comprender una herramienta es la mejor forma de usarla.">
+<meta name="theme-color" content="#07080f">
+<link rel="canonical" href="https://tonalizador.xosemiguel.eu/tutorial/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238b7cff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%234cc9f0%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d18%22%2F%3E%3Cg%20fill%3D%22url%28%23g%29%22%3E%3Crect%20x%3D%2213%22%20y%3D%2226%22%20width%3D%226%22%20height%3D%2212%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2224%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%2228%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2211%22%20width%3D%226%22%20height%3D%2242%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2246%22%20y%3D%2223%22%20width%3D%226%22%20height%3D%2218%22%20rx%3D%223%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238b7cff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%234cc9f0%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d18%22%2F%3E%3Cg%20fill%3D%22url%28%23g%29%22%3E%3Crect%20x%3D%2213%22%20y%3D%2226%22%20width%3D%226%22%20height%3D%2212%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2224%22%20y%3D%2218%22%20width%3D%226%22%20height%3D%2228%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2211%22%20width%3D%226%22%20height%3D%2242%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2246%22%20y%3D%2223%22%20width%3D%226%22%20height%3D%2218%22%20rx%3D%223%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="Tonalizador · el viaje">
+<meta property="og:url" content="https://tonalizador.xosemiguel.eu/tutorial/">
+<meta property="og:title" content="Tu música esconde un secreto — El viaje interactivo del Tonalizador">
+<meta property="og:description" content="Una experiencia interactiva para entender qué es una tonalidad, cómo la detecta el Tonalizador y por qué comprender una herramienta es la mejor forma de usarla.">
+<meta property="og:image" content="https://tonalizador.xosemiguel.eu/tutorial/img/og-tutorial.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Portada del tutorial interactivo del Tonalizador: doce notas orbitando una estrella dorada.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tu música esconde un secreto — El viaje interactivo del Tonalizador">
+<meta name="twitter:description" content="Una experiencia interactiva para entender qué es una tonalidad, cómo la detecta el Tonalizador y por qué comprender una herramienta es la mejor forma de usarla.">
+<meta name="twitter:image" content="https://tonalizador.xosemiguel.eu/tutorial/img/og-tutorial.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/utilities.css">
+</head>
+<body>
+
+<a class="skip-link" href="#c-problema">Saltar a los contenidos</a>
+<div class="sky" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="progress-bar" id="progress-bar" aria-hidden="true"></div>
+
+<header class="site-head">
+  <a class="sh-brand" href="#c-inicio"><span class="sh-star" aria-hidden="true">✦</span>Tonalizador · <strong>el viaje</strong></a>
+  <div class="sh-menu-wrap sh-push">
+    <button class="sh-menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-haspopup="true">
+      ☰ <span class="lbl">Capítulos</span> <span class="chev" aria-hidden="true">▾</span>
+    </button>
+    <nav class="sh-menu" id="menu-panel" hidden aria-label="Capítulos del tutorial"></nav>
+  </div>
+  <div class="sh-menu-wrap">
+    <button class="sh-menu-btn" id="gloss-btn" type="button" aria-expanded="false" aria-controls="gloss-panel" aria-haspopup="true">
+      📖 <span class="lbl">Glosario</span> <span class="chev" aria-hidden="true">▾</span>
+    </button>
+    <div class="sh-menu gloss-menu" id="gloss-panel" hidden aria-label="Glosario del viaje"></div>
+  </div>
+  <a class="sh-app" href="https://tonalizador.xosemiguel.eu/" target="_blank" rel="noopener">Abrir la app ↗</a>
+</header>
+
+<nav class="chapter-nav" id="chapter-nav" aria-label="Capítulos"></nav>
+
+<!-- ══════════════════════════════ HERO ══════════════════════════════ -->
+
+<header class="hero" id="c-inicio" data-chapter="Inicio">
+  <div class="hero-grid">
+    <div class="hero-text">
+      <p class="overline">Un viaje interactivo al corazón de tu música</p>
+      <h1>Tu música esconde<br>un secreto.<br>Hoy vas a <span class="grad">descubrirlo</span>.</h1>
+      <p class="sub">
+        Cada canción está construida alrededor de una nota que actúa como su <strong>«casa»</strong>: su tonalidad.
+        <strong>Tonalizador</strong> la encuentra por ti; esta experiencia te enseñará a <strong>comprenderla</strong>:
+        qué es, cómo la siente tu oído sin que lo sepas, cómo la calcula una máquina y por qué, a veces,
+        la respuesta más honesta es «no lo sé». Al final no habrás aprendido solo una herramienta:
+        habrás aprendido a <em>mirar la música por dentro</em>.
+      </p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="#acto-1">Empezar el viaje ↓</a>
+        <button class="btn" id="hero-listen" type="button">🔊 Escuchar una tonalidad</button>
+      </div>
+      <p class="hero-note">Sin instalar nada · El sonido se genera en tu navegador · 17 experimentos interactivos</p>
+    </div>
+    <div class="hero-viz">
+      <canvas id="hero-canvas" aria-hidden="true"></canvas>
+      <div class="hero-caption">
+        <span class="star" aria-hidden="true">✦</span>
+        <p>Esta constelación no es un adorno: son las <strong>doce notas</strong> de toda la música,
+        orbitando una estrella dorada — la <strong>nota&#8209;hogar</strong>. Los hilos son la gravedad que tu oído
+        siente en cada canción, aunque nadie te la haya enseñado. Pulsa «Escuchar una tonalidad» y mira encenderse
+        las notas que suenan. Aprender a <em>ver</em> esa gravedad — y cómo una máquina la mide — es este viaje.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════ ACTO I ══════════════════════════════ -->
+
+<div class="divider-act reveal" id="acto-1">
+  <span class="act-label">Acto I</span>
+  <h2>Lo que tu oído ya sabe (aunque nadie te lo haya contado)</h2>
+</div>
+
+<!-- ─────────── 1 · El problema ─────────── -->
+
+<section class="chapter" id="c-problema" data-chapter="El problema">
+  <p class="kicker reveal"><span class="act">01 ·</span> El punto de partida</p>
+  <h2 class="reveal">Trescientas canciones y un cesto de ropa revuelta</h2>
+  <div class="prose reveal">
+    <p class="lead">Imagina tu playlist favorita: cientos de canciones acumuladas durante años. Suenan bien
+    de una en una. Pero encadenadas al azar, algo chirría: una canción luminosa choca contra una sombría,
+    una entrada brusca rompe el hechizo de la anterior.</p>
+    <p>Los DJ profesionales conocen el secreto desde hace décadas: dos canciones suenan bien seguidas cuando
+    sus <strong>tonalidades son compatibles</strong>. El problema es que averiguar la tonalidad de una sola canción
+    a oído exige años de entrenamiento musical. Hacerlo con trescientas llevaría semanas.</p>
+  </div>
+  <div class="analogy reveal">
+    <span class="tag">Analogía</span>
+    <p>Tonalizador es como una persona muy ordenada delante de un cesto enorme de ropa mezclada: va sacando
+    prenda a prenda y forma montones etiquetados — blancas aquí, oscuras allá, delicadas aparte. El cesto es tu
+    playlist; los montones, las tonalidades.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 1 · Escucha la diferencia</p>
+    <p class="panel-hint" style="margin:0 0 18px">Dos maneras de encadenar las mismas tres canciones. Pulsa cada botón
+    y fíjate en cómo <em>aterriza</em> cada transición. No hace falta saber nada: tu oído decidirá solo.</p>
+    <div class="playlists">
+      <div class="playlist" id="pl-random">
+        <header>Al azar <button class="btn" data-play="random" type="button">▶ Escuchar</button></header>
+        <div class="pl-body"></div>
+      </div>
+      <div class="playlist" id="pl-sorted">
+        <header>Ordenada por tonalidad <button class="btn btn-primary" data-play="sorted" type="button">▶ Escuchar</button></header>
+        <div class="pl-body"></div>
+      </div>
+    </div>
+    <p class="panel-hint">Lo que acabas de notar —esa sensación de choque o de continuidad— es exactamente el fenómeno
+    que Tonalizador convierte en algo medible. El resto de este viaje explica cómo.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>¿Por qué tu oído, sin ninguna formación musical, ya distingue una transición suave de un choque?
+    ¿Qué sabe tu cerebro que tú todavía no sabes que sabe?</p>
+  </div>
+</section>
+
+<!-- ─────────── 2 · ¿Qué es una tonalidad? ─────────── -->
+
+<section class="chapter" id="c-tonalidad" data-chapter="La tonalidad">
+  <p class="kicker reveal"><span class="act">02 ·</span> La idea central</p>
+  <h2 class="reveal">La tonalidad: una nota que actúa como hogar</h2>
+  <div class="prose reveal">
+    <p class="lead">Casi toda la música que conoces está construida alrededor de una nota principal.
+    La melodía sale de paseo — sube, baja, se aleja — pero siempre tiende a <strong>volver a esa nota</strong>,
+    como quien vuelve a casa al final del día. Esa nota-hogar, junto con su «estado de ánimo», es la <strong>tonalidad</strong>.</p>
+    <p>No es una convención arbitraria: es un fenómeno de la percepción. Tu cerebro lleva toda la vida
+    escuchando música organizada así, y ha aprendido a sentir una fuerza de gravedad silenciosa que
+    tira de las melodías hacia su centro. Cuando una canción termina en su nota-hogar, sientes <em>reposo</em>.
+    Cuando se detiene en otra, sientes que algo quedó… suspendido en el aire.</p>
+  </div>
+  <div class="analogy reveal">
+    <span class="tag">Analogía</span>
+    <p>Piensa en el color dominante de una habitación. Puede haber decenas de objetos, pero casi siempre dices
+    «esta habitación es azul». Con las canciones pasa igual: aunque usen muchas notas, hay una que domina.
+    Decir «esta canción está en Do» es decir «esta habitación es azul».</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 2 · Siente la gravedad musical</p>
+    <p class="panel-hint" style="margin:0 0 18px">Una misma melodía, dos finales. En el primero, la melodía
+    vuelve a casa. En el segundo, se queda a un solo paso de la puerta… y no entra.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="melody-resolve" type="button">▶ Final que descansa</button>
+      <button class="btn" id="melody-suspend" type="button">▶ Final suspendido</button>
+    </div>
+    <div class="piano-wrap" style="margin-top:22px">
+      <div class="piano" id="piano-home" role="group" aria-label="Teclado de piano interactivo"></div>
+    </div>
+    <p class="panel-hint">El teclado también es tuyo: pulsa cualquier tecla para oírla. La tecla dorada es la
+    nota-hogar (Do). Fíjate en cómo la penúltima nota del «final suspendido» — Si, justo al lado de casa —
+    genera una tensión casi física. Los músicos la llaman <em>sensible</em>: la nota que <em>siente</em> la cercanía del hogar.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>Si nadie te enseñó a sentir esa gravedad… ¿de dónde salió? ¿Está en la física del sonido,
+    en tu cultura, o en la conversación de siglos entre ambas?</p>
+  </div>
+</section>
+
+<!-- ─────────── 3 · Mayor y menor ─────────── -->
+
+<section class="chapter" id="c-modo" data-chapter="Mayor y menor">
+  <p class="kicker reveal"><span class="act">03 ·</span> Los dos estados de ánimo</p>
+  <h2 class="reveal">Mayor y menor: la misma foto, con sol o con nubes</h2>
+  <div class="prose reveal">
+    <p class="lead">Cada nota-hogar puede sostener dos «climas» distintos. El modo <strong>Mayor</strong> suena
+    luminoso, abierto, festivo. El modo <strong>menor</strong> suena íntimo, serio, melancólico. La diferencia técnica
+    es diminuta — un par de notas de la escala bajan medio escalón — pero el efecto emocional es enorme.</p>
+    <p>Por eso los resultados del Tonalizador dicen cosas como <strong>«Re Mayor»</strong> o <strong>«Do menor»</strong>:
+    primero la nota-hogar (Re, Do…), después el estado de ánimo. Doce notas posibles × dos modos =
+    <strong>24 tonalidades</strong>. Ese es el mapa completo en el que vive prácticamente toda la música popular.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 3 · El interruptor del clima</p>
+    <p class="panel-hint" style="margin:0 0 18px">La misma melodía, nota por nota, en los dos modos.
+    Solo cambian dos notas. Escucha lo que le ocurre a la emoción.</p>
+    <div class="btn-row">
+      <div class="seg" role="group" aria-label="Elegir modo">
+        <button type="button" id="mode-major" aria-pressed="true">☀️ Mayor</button>
+        <button type="button" id="mode-minor" aria-pressed="false">🌙 menor</button>
+      </div>
+      <button class="btn btn-primary" id="mode-play" type="button">▶ Escuchar</button>
+    </div>
+    <div class="mood-scene" aria-hidden="true">
+      <svg class="mood-svg" id="mood-svg" viewBox="0 0 300 170">
+        <defs>
+          <linearGradient id="sky-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop id="sky-top" offset="0" stop-color="#2b3a67"/>
+            <stop id="sky-bottom" offset="1" stop-color="#0d1020"/>
+          </linearGradient>
+        </defs>
+        <rect width="300" height="170" rx="14" fill="url(#sky-grad)"/>
+        <circle id="mood-sun" cx="150" cy="70" r="30" fill="#ffd76b" opacity="0.95"/>
+        <g id="mood-rays" stroke="#ffd76b" stroke-width="3" stroke-linecap="round">
+          <line x1="150" y1="20" x2="150" y2="32"/><line x1="150" y1="108" x2="150" y2="120"/>
+          <line x1="100" y1="70" x2="112" y2="70"/><line x1="188" y1="70" x2="200" y2="70"/>
+          <line x1="115" y1="35" x2="123" y2="43"/><line x1="177" y1="97" x2="185" y2="105"/>
+          <line x1="185" y1="35" x2="177" y2="43"/><line x1="123" y1="97" x2="115" y2="105"/>
+        </g>
+        <g id="mood-clouds" opacity="0">
+          <ellipse cx="110" cy="55" rx="38" ry="14" fill="#6d7284"/>
+          <ellipse cx="150" cy="45" rx="34" ry="13" fill="#7d829a"/>
+          <ellipse cx="190" cy="58" rx="40" ry="15" fill="#585d73"/>
+        </g>
+        <path d="M0 150 Q 75 128 150 145 T 300 142 V 170 H 0 Z" fill="#161a2e"/>
+      </svg>
+    </div>
+    <p class="panel-hint" id="mode-caption">Modo Mayor: las notas tercera y sexta de la escala están en su posición «alta». La luz entra de lleno.</p>
+  </div>
+
+  <div class="analogy reveal">
+    <span class="tag">Analogía</span>
+    <p>Mayor y menor son la misma fotografía revelada dos veces: una a pleno sol y otra en un día nublado.
+    El paisaje no cambia — cambia la luz que lo atraviesa.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>¿Por qué medio escalón de diferencia en dos notas puede cambiar la emoción de una pieza entera?
+    Nadie tiene una respuesta completa. Tu oído, sin embargo, la aplica sin dudar.</p>
+  </div>
+</section>
+
+<!-- ─────────── 4 · Escalas ─────────── -->
+
+<section class="chapter" id="c-escalas" data-chapter="Escalas">
+  <p class="kicker reveal"><span class="act">04 ·</span> El material de construcción</p>
+  <h2 class="reveal">Escalas: las siete notas que forman una familia</h2>
+  <div class="prose reveal">
+    <p class="lead">De las doce notas que existen, cada tonalidad elige <strong>siete</strong> y las trata como
+    su familia. Esa selección se llama <strong>escala</strong>. Las canciones en esa tonalidad usan sobre todo esas
+    siete notas; las otras cinco aparecen solo de visita, como invitadas que dan color.</p>
+    <p>Lo asombroso es que la <em>receta</em> de la selección es siempre la misma. Para el modo Mayor:
+    empezar en la nota-hogar y avanzar con este patrón de pasos — dos grandes, uno pequeño, tres grandes, uno pequeño.
+    Cambia la nota de partida y la receta produce una familia distinta, pero con el mismo aire de familia.
+    Por eso existen exactamente doce escalas Mayores y doce menores: una por cada punto de partida posible.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 4 · Construye tu propia escala</p>
+    <p class="panel-hint" style="margin:0 0 18px">Elige una nota-hogar y un modo. La receta hace el resto:
+    las teclas de la familia se iluminan y puedes escucharla subir.</p>
+    <div class="btn-row" style="margin-bottom:16px">
+      <label class="sr-only" for="scale-tonic">Nota de partida</label>
+      <div class="seg" id="scale-tonics" role="group" aria-label="Nota de partida"></div>
+    </div>
+    <div class="btn-row">
+      <div class="seg" role="group" aria-label="Modo de la escala">
+        <button type="button" id="scale-major" aria-pressed="true">Mayor</button>
+        <button type="button" id="scale-minor" aria-pressed="false">menor</button>
+      </div>
+      <button class="btn btn-primary" id="scale-play" type="button">▶ Escuchar la escala</button>
+      <span class="chip acc" id="scale-name">Do Mayor</span>
+    </div>
+    <div class="piano-wrap" style="margin-top:22px">
+      <div class="piano" id="piano-scale" role="group" aria-label="Teclado con la escala iluminada"></div>
+    </div>
+    <p class="panel-hint">Dorado = nota-hogar · Azul = resto de la familia. Observa que al cambiar de tonalidad
+    <em>el dibujo se desplaza</em>, pero la distancia entre las notas — la receta — no cambia nunca. Este detalle será
+    crucial cuando veamos cómo «piensa» el algoritmo: reconocer una tonalidad es reconocer ese dibujo, esté donde esté.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>Si la receta es idéntica y solo cambia el punto de partida, ¿qué hace entonces «especial» a cada tonalidad?
+    ¿Y qué tendría que mirar una máquina para averiguar cuál se está usando?</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ ACTO II ══════════════════════════════ -->
+
+<div class="divider-act reveal" id="acto-2">
+  <span class="act-label">Acto II</span>
+  <h2>El mapa: 24 tonalidades y un reloj para navegarlas</h2>
+</div>
+
+<!-- ─────────── 5 · Rueda Camelot ─────────── -->
+
+<section class="chapter" id="c-camelot" data-chapter="La rueda Camelot">
+  <p class="kicker reveal"><span class="act">05 ·</span> Vecindarios sonoros</p>
+  <h2 class="reveal">La rueda Camelot: un reloj donde las horas son tonalidades</h2>
+  <div class="prose reveal">
+    <p class="lead">Las 24 tonalidades no son islas: algunas comparten casi toda su familia de notas, y por eso
+    pasar de una a otra suena natural. A finales de los noventa se popularizó una forma brillante de dibujar
+    esos parentescos: colocarlas en una <strong>rueda como la esfera de un reloj</strong>.</p>
+    <p>Cada tonalidad recibe un código: un número del 1 al 12 más una letra — <strong>B</strong> para las Mayores
+    (anillo exterior), <strong>A</strong> para las menores (anillo interior). Y la regla de oro cabe en una frase:
+    <strong>dos canciones combinan bien si sus códigos son iguales o vecinos</strong> — el mismo número con la otra
+    letra, o el número de al lado con la misma letra. Es el truco que los DJ llaman <em>mezcla armónica</em>.</p>
+  </div>
+  <div class="analogy reveal">
+    <span class="tag">Analogía</span>
+    <p>Cada canción es una pieza de puzle y su código Camelot dibuja la forma de sus bordes. Dos piezas con
+    bordes compatibles encajan sin forzar; dos incompatibles chirrían aunque las aprietes.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 5 · Explora la rueda</p>
+    <p class="panel-hint" style="margin:0 0 18px">Toca cualquier casilla. Se iluminarán sus tres vecinas compatibles
+    y podrás escuchar cómo suena esa tonalidad y cómo aterriza un salto compatible… o uno incompatible.</p>
+    <div class="wheel-layout">
+      <svg id="camelot-svg" viewBox="0 0 440 440" role="group" aria-label="Rueda Camelot interactiva"></svg>
+      <div class="wheel-info" id="wheel-info">
+        <p class="panel-hint" style="margin:0 0 6px">Tonalidad seleccionada</p>
+        <p class="wheel-key-name" id="wheel-name">Elige una casilla</p>
+        <p class="wheel-sub" id="wheel-sub">La rueda entera está a un toque de distancia.</p>
+        <div class="badge-row" id="wheel-badges"></div>
+        <div class="btn-row" style="margin-top:18px">
+          <button class="btn btn-primary" id="wheel-play" type="button" disabled>▶ Escuchar esta tonalidad</button>
+          <button class="btn" id="wheel-play-good" type="button" disabled>Salto compatible</button>
+          <button class="btn" id="wheel-play-bad" type="button" disabled>Salto incompatible</button>
+        </div>
+        <p class="panel-hint" id="wheel-verdict"></p>
+      </div>
+    </div>
+    <p class="panel-hint">Este es exactamente el tercer «idioma» en que Tonalizador te da cada resultado:
+    <span class="mono">Do menor · Cm · 5A</span> son tres nombres de la misma casa — en la tradición española,
+    en la notación internacional y en el reloj de los DJ.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>La rueda no la inventó la naturaleza: la inventaron personas buscando una forma de <em>ver</em> un parentesco
+    que el oído ya sentía. ¿Cuántas herramientas conoces que sean, en el fondo, eso — una manera de ver lo invisible?</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ ACTO III ══════════════════════════════ -->
+
+<div class="divider-act reveal" id="acto-3">
+  <span class="act-label">Acto III</span>
+  <h2>La máquina: cómo piensa el Tonalizador</h2>
+</div>
+
+<!-- ─────────── 6 · La cadena de fuentes ─────────── -->
+
+<section class="chapter" id="c-cadena" data-chapter="La cadena de fuentes">
+  <p class="kicker reveal"><span class="act">06 ·</span> La estrategia</p>
+  <h2 class="reveal">Antes de escuchar, preguntar: la cadena de fuentes</h2>
+  <div class="prose reveal">
+    <p class="lead">Aquí llega la primera sorpresa: para averiguar la tonalidad de tu playlist, Tonalizador
+    <strong>no empieza escuchando la música</strong>. Empieza haciendo lo que haría una persona sensata ante una duda:
+    consultar. Primero sus apuntes, luego los libros, y solo al final el experimento.</p>
+    <p>Para cada canción recorre una cadena de cuatro estaciones, y se detiene en cuanto obtiene una respuesta fiable:
+    la <strong>memoria compartida</strong> (¿alguien preguntó ya por esta canción?), la <strong>identificación</strong>
+    en el catálogo de Spotify (¿qué grabación exacta es?), la <strong>ficha musical</strong> de ReccoBeats
+    (¿en qué tono está esa grabación?) y, como último recurso y solo si tú lo pides, el
+    <strong>análisis acústico local</strong>: escuchar de verdad el archivo, dentro de tu propio dispositivo.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 6 · Sigue el viaje de una canción</p>
+    <p class="panel-hint" style="margin:0 0 18px">Elige una canción (son los casos reales con los que se probó la
+    herramienta en producción) y observa cómo recorre la cadena. Prueba la misma canción dos veces: la segunda vez
+    la memoria responderá al instante.</p>
+    <div class="song-picker" id="pipeline-picker" role="group" aria-label="Elegir canción"></div>
+    <div class="pipeline" id="pipeline">
+      <div class="travel-dot" id="travel-dot"></div>
+      <div class="station" data-st="cache">
+        <div class="icon">🗂️</div>
+        <div><div class="name">1 · Memoria compartida (caché)</div><div class="desc">¿Ya se averiguó antes? Como el archivador de una gestoría: si el expediente existe, no se tramita dos veces.</div></div>
+        <div class="status"></div>
+      </div>
+      <div class="station" data-st="spotify">
+        <div class="icon">🕵️</div>
+        <div><div class="name">2 · Identificación (Spotify)</div><div class="desc">Con título y artista se localiza la grabación exacta. Como comprobar el DNI: el nombre no basta.</div></div>
+        <div class="status"></div>
+      </div>
+      <div class="station" data-st="recco">
+        <div class="icon">📚</div>
+        <div><div class="name">3 · Ficha musical (ReccoBeats)</div><div class="desc">Para esa grabación exacta, la base de datos aporta tonalidad y BPM. La enciclopedia especializada.</div></div>
+        <div class="status"></div>
+      </div>
+      <div class="station" data-st="local">
+        <div class="icon">🎧</div>
+        <div><div class="name">4 · Análisis acústico local (opcional)</div><div class="desc">Si nada funcionó, tú decides si «escuchar» el archivo en tu dispositivo. El especialista que examina al paciente.</div></div>
+        <div class="status"></div>
+      </div>
+    </div>
+    <div class="result-card" id="pipeline-result" aria-live="polite"></div>
+  </div>
+
+  <div class="prose reveal">
+    <p><strong>¿Por qué ese orden?</strong> Por eficiencia y por honestidad. La memoria es instantánea y evita repetir
+    trabajo. El catálogo es rápido y contrastado. Y el análisis acústico —lo más lento y costoso— queda como el
+    especialista al que solo se acude cuando el historial no aclara el caso. Cada estación anota además <em>qué hizo
+    y por qué</em>: al final, cada resultado lleva su recibo.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>¿En qué otros problemas de tu vida aplicas —sin darte cuenta— esta misma cadena:
+    memoria, consulta, experimento?</p>
+  </div>
+</section>
+
+<!-- ─────────── 7 · Identificación exacta ─────────── -->
+
+<section class="chapter" id="c-identidad" data-chapter="La grabación exacta">
+  <p class="kicker reveal"><span class="act">07 ·</span> El detalle que lo cambia todo</p>
+  <h2 class="reveal">«¿Qué versión, exactamente?» — la pregunta del repartidor escrupuloso</h2>
+  <div class="prose reveal">
+    <p class="lead">Una misma canción puede existir en muchas encarnaciones: la de estudio, la del directo,
+    un remix, una versión acústica, una regrabación décadas después. <strong>Y cada una puede estar en un tono
+    distinto.</strong> Por eso identificar la grabación exacta no es un tecnicismo: es la diferencia entre acertar
+    y equivocarse con total seguridad.</p>
+  </div>
+  <div class="analogy reveal">
+    <span class="tag">Analogía</span>
+    <p>Pedir «leche» al supermercado no basta: ¿entera, desnatada, sin lactosa? Tonalizador es un repartidor
+    escrupuloso: si no está seguro de qué versión exacta pides, prefiere preguntarte antes que traerte la equivocada.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 7 · Tú eres el algoritmo</p>
+    <p class="panel-hint" style="margin:0 0 18px">Tu playlist dice una cosa; el catálogo ofrece candidatas.
+    ¿Dejarías pasar cada caso automáticamente, o lo mandarías a revisión? Decide y compara con las reglas reales
+    de la herramienta.</p>
+    <div id="match-cases"></div>
+  </div>
+
+  <div class="prose reveal">
+    <p>Las reglas reales son deliberadamente prudentes: una coincidencia <strong>exacta</strong> de título y artista
+    continúa; una <strong>remasterización</strong> claramente equivalente (la misma grabación con el sonido pulido)
+    también; pero directos, remixes, versiones acústicas y covers <strong>nunca pasan solos</strong> — van a la lista
+    de revisión, donde la última palabra es tuya. Es el primer principio de diseño de la herramienta:
+    <em>mejor decir «no lo sé» que equivocarse en silencio</em>.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>Un dato erróneo colocado con aplomo es más peligroso que un hueco visible. ¿Dónde más — noticias, medicina,
+    inteligencia artificial — te gustaría que las máquinas practicaran esta forma de humildad?</p>
+  </div>
+</section>
+
+<!-- ─────────── 8 · El laboratorio acústico ─────────── -->
+
+<section class="chapter" id="c-laboratorio" data-chapter="El laboratorio">
+  <p class="kicker reveal"><span class="act">08 ·</span> El corazón del algoritmo</p>
+  <h2 class="reveal">El laboratorio: cómo «escucha» una máquina</h2>
+  <div class="prose reveal">
+    <p class="lead">Y cuando ninguna fuente responde, llega el momento más fascinante: darle a la máquina el archivo
+    de audio y pedirle que lo escuche. Pero una máquina no tiene oídos. Tiene algo distinto — y sorprendentemente
+    parecido a lo que hace tu cerebro sin contártelo.</p>
+    <p>El procedimiento, que ocurre íntegro dentro de tu navegador (el archivo <strong>jamás</strong> se sube a internet),
+    tiene tres movimientos: <strong>pesar</strong>, <strong>comparar</strong> y <strong>dudar con elegancia</strong>.
+    Primero recorre la canción midiendo cuánto «pesa» cada una de las doce notas — cuánta presencia acumula cada una,
+    suene en la octava que suene. El resultado es una huella de doce barras: el <em>perfil cromático</em>.
+    Después compara esa huella con los patrones típicos de las 24 tonalidades. Y por último se pregunta:
+    ¿ha ganado alguien con claridad… o ha sido un final de foto?</p>
+  </div>
+  <div class="analogy reveal">
+    <span class="tag">Analogía</span>
+    <p>Es el trabajo de un perito de huellas: la canción deja una huella de doce crestas, el archivo policial
+    contiene 24 fichas conocidas, y gana la ficha que mejor encaja. Pero un buen perito nunca dice solo «es esta»:
+    dice <em>cuánto</em> se parece, y si la segunda candidata estaba peligrosamente cerca.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 8 · El laboratorio en vivo</p>
+    <p class="panel-hint" style="margin:0 0 14px">Elige una «canción» sintetizada y mira el algoritmo trabajar por
+    dentro, paso a paso, con sonido real generado en tu navegador. (Es una simulación didáctica fiel del método
+    <span class="mono">local_hpcp_v2</span> de la herramienta: mismos perfiles tonales, misma fórmula de confianza.)</p>
+    <div class="song-picker" id="lab-picker" role="group" aria-label="Elegir muestra para analizar"></div>
+    <div class="btn-row" style="margin-bottom:16px">
+      <button class="btn btn-primary" id="lab-run" type="button">▶ Analizar escuchando</button>
+      <button class="btn" id="lab-stop" type="button" disabled>■ Detener</button>
+    </div>
+    <div class="lab-steps" aria-hidden="true">
+      <span class="lab-step" data-step="0">1 · Onda sonora</span>
+      <span class="lab-step" data-step="1">2 · Pesar las 12 notas</span>
+      <span class="lab-step" data-step="2">3 · Comparar con 24 patrones</span>
+      <span class="lab-step" data-step="3">4 · Medir la duda</span>
+    </div>
+    <div class="lab-stage">
+      <div class="lab-canvas-wrap"><span class="cap">La onda: el sonido en bruto</span><canvas id="lab-wave" height="150"></canvas></div>
+      <div class="lab-canvas-wrap"><span class="cap">El perfil cromático: cuánto pesa cada nota</span><canvas id="lab-chroma" height="150"></canvas></div>
+      <div class="lab-canvas-wrap"><span class="cap">Las 24 candidatas, puntuadas</span><canvas id="lab-rank" height="230"></canvas></div>
+    </div>
+    <div class="confidence-panel" id="lab-confidence">
+      <h3 style="margin-top:8px">La medida de la duda</h3>
+      <p class="panel-hint" style="margin:0 0 10px">La confianza no es una corazonada: es una fórmula con cuatro
+      ingredientes pesados. Estos son los valores de tu análisis:</p>
+      <div class="meter" data-m="correlation"><div class="row"><span>Parecido con el patrón ganador <span class="w">× 0,42</span></span><span class="val mono">–</span></div><div class="track"><div class="fill"></div></div></div>
+      <div class="meter" data-m="separation"><div class="row"><span>Ventaja sobre la segunda candidata <span class="w">× 0,30</span></span><span class="val mono">–</span></div><div class="track"><div class="fill"></div></div></div>
+      <div class="meter" data-m="concentration"><div class="row"><span>Nitidez del perfil (poca dispersión) <span class="w">× 0,10</span></span><span class="val mono">–</span></div><div class="track"><div class="fill"></div></div></div>
+      <div class="meter" data-m="agreement"><div class="row"><span>Acuerdo entre los tramos de la canción <span class="w">× 0,18</span></span><span class="val mono">–</span></div><div class="track"><div class="fill"></div></div></div>
+      <div class="verdict" id="lab-verdict"></div>
+    </div>
+  </div>
+
+  <div class="prose reveal">
+    <p>Fíjate en el último ingrediente: la canción se analiza <strong>entera</strong>, troceada en tramos, y se
+    comprueba si todos los tramos votan a la misma ganadora. Si la confianza final no alcanza el umbral
+    (<span class="mono">62%</span>), el resultado se muestra igualmente — pero marcado como dudoso, y
+    <strong>no entra</strong> en las listas descargables sin tu permiso. La duda, aquí, no es un fallo:
+    es una prestación.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>La máquina no «oye» música: cuenta, pesa y compara. Y sin embargo llega a menudo a la misma conclusión que
+    tu oído. ¿Significa eso que tu cerebro también cuenta, pesa y compara… sin pedirte permiso?</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ ACTO IV ══════════════════════════════ -->
+
+<div class="divider-act reveal" id="acto-4">
+  <span class="act-label">Acto IV</span>
+  <h2>La práctica: usarla bien, dudar mejor</h2>
+</div>
+
+<!-- ─────────── 9 · Leer un resultado ─────────── -->
+
+<section class="chapter" id="c-resultado" data-chapter="Leer un resultado">
+  <p class="kicker reveal"><span class="act">09 ·</span> Alfabetización de datos</p>
+  <h2 class="reveal">Anatomía de un resultado: cada respuesta lleva su recibo</h2>
+  <div class="prose reveal">
+    <p class="lead">Cuando Tonalizador termina, junto a cada canción aparece una ficha. Nada en ella es decorativo:
+    cada campo responde a una pregunta concreta. Aprender a leerla es aprender a distinguir
+    <em>qué</em> te dice la herramienta de <em>cuánto</em> deberías fiarte.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 9 · Explora la ficha</p>
+    <p class="panel-hint" style="margin:0 0 18px">Esta es una ficha real de las pruebas en producción.
+    Toca cada campo para descubrir qué significa y por qué existe.</p>
+    <div class="anatomy">
+      <div class="song-card" id="anatomy-card">
+        <p class="t">LAS 12</p>
+        <p class="a">Análisis del 29 de julio de 2026 · fila de la tabla «Analizar»</p>
+      </div>
+      <div class="anatomy-detail" id="anatomy-detail" aria-live="polite">
+        <h4>Toca un campo de la ficha</h4>
+        <p>Cada dato tiene una historia detrás: de dónde salió, qué significa y qué no significa.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="prose reveal">
+    <p>Hay un matiz que merece un momento de atención: la ficha contiene <strong>dos confianzas distintas</strong>,
+    y conviene no mezclarlas. La <em>confianza de identificación</em> mide la seguridad de haber encontrado
+    <strong>la grabación correcta</strong>. La <em>confianza tonal</em> mide la seguridad sobre <strong>la tonalidad
+    misma</strong>. Como en una biblioteca: puedes estar segurísimo de haber cogido el libro correcto y aun así dudar
+    del idioma de uno de sus capítulos. Y cuando una fuente no proporciona confianza tonal, Tonalizador muestra
+    «sin dato» — <strong>nunca se inventa un porcentaje</strong>.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>¿Cuántas herramientas que usas a diario te dicen no solo la respuesta, sino de dónde la sacaron
+    y cuánto dudan de ella? ¿Cómo cambiaría tu relación con la tecnología si todas lo hicieran?</p>
+  </div>
+</section>
+
+<!-- ─────────── 10 · Casos ambiguos ─────────── -->
+
+<section class="chapter" id="c-ambiguos" data-chapter="Casos ambiguos">
+  <p class="kicker reveal"><span class="act">10 ·</span> Donde el mapa se difumina</p>
+  <h2 class="reveal">Casos ambiguos: cuando la respuesta correcta es dudar</h2>
+  <div class="prose reveal">
+    <p class="lead">Hay canciones que se resisten a una etiqueta única, y no por capricho: la ambigüedad está
+    en la propia música. Conocer estos casos te convierte en mejor lector de resultados que la mayoría de
+    usuarios de cualquier detector de tonalidad.</p>
+    <p><strong>El primer caso es un clásico:</strong> cada tonalidad Mayor tiene una «prima hermana» menor que usa
+    <em>exactamente las mismas siete notas</em> — solo cambia cuál actúa de hogar. Do Mayor y La menor comparten
+    la familia entera. Para distinguirlas no basta con pesar las notas: hay que fijarse en cuál manda, cuál abre
+    y cierra las frases. A veces ni los músicos se ponen de acuerdo.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 10 · Las primas hermanas</p>
+    <p class="panel-hint" style="margin:0 0 18px">Dos progresiones con las mismas siete notas de familia.
+    Escúchalas: una siente su hogar en Do (luminosa), la otra en La (melancólica). Debajo, sus perfiles de notas:
+    casi gemelos. Por eso el algoritmo mide la <em>ventaja sobre la segunda candidata</em> — y cuando es escasa,
+    lo confiesa.</p>
+    <div class="compare-grid">
+      <div class="compare-col">
+        <h4>☀️ Hogar en Do (Do Mayor · 8B)</h4>
+        <p class="sub">Do – Fa – Sol – Do</p>
+        <button class="btn btn-primary" data-relative="major" type="button">▶ Escuchar</button>
+        <div class="mini-bars" id="bars-cmajor" aria-hidden="true"></div>
+      </div>
+      <div class="compare-col">
+        <h4>🌙 Hogar en La (La menor · 8A)</h4>
+        <p class="sub">Lam – Fa – Sol – Lam</p>
+        <button class="btn" data-relative="minor" type="button">▶ Escuchar</button>
+        <div class="mini-bars" id="bars-aminor" aria-hidden="true"></div>
+      </div>
+    </div>
+    <p class="panel-hint">¿Ves lo parecidas que son las dos huellas? La diferencia decisiva no está en <em>qué</em> notas
+    suenan sino en <em>cómo</em> se reparten el protagonismo. En la rueda Camelot, además, son vecinas directas:
+    8B y 8A. La ambigüedad tiene hasta dirección postal.</p>
+  </div>
+
+  <div class="prose reveal">
+    <p><strong>El segundo caso son las canciones que se mudan.</strong> Algunas piezas cambian de tonalidad a mitad
+    de camino — los músicos lo llaman <em>modular</em>. El ejemplo canónico es <em>Bohemian Rhapsody</em>: atraviesa
+    varios barrios tonales en seis minutos. Para estos casos, el resultado del Tonalizador indica la tonalidad
+    <strong>predominante</strong> global: utilísima para clasificar, pero no es un análisis musicológico de cada sección.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 11 · Una canción que se muda de casa</p>
+    <p class="panel-hint" style="margin:0 0 14px">Línea de tiempo estilizada de una canción que modula
+    (inspirada en <em>Bohemian Rhapsody</em>, catalogada globalmente como Do menor · 5A · 143 BPM). Toca cada tramo
+    para escuchar su color local.</p>
+    <div class="modulation-timeline">
+      <div class="mod-track" id="mod-track" role="group" aria-label="Tramos de la canción"></div>
+      <p class="panel-hint" id="mod-caption" style="margin-top:12px">Un solo dato global — «Do menor» — resume un paisaje
+      que en realidad cambia de color. Ni error ni mentira: un resumen. Como decir «España es soleada».</p>
+    </div>
+  </div>
+
+  <div class="prose reveal">
+    <p><strong>¿Y las canciones que quedan «sin clasificar»?</strong> Son el sistema funcionando bien. Si ninguna
+    fuente automática dio un dato fiable —canción poco documentada, versión rara, ediciones demasiado parecidas—
+    la herramienta prefiere el hueco visible al error invisible. Para esas canciones tienes dos salidas:
+    el análisis acústico del archivo, o la corrección manual si tú conoces el tono.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>Un mapa que dibuja nítidos los territorios difusos no es un buen mapa: es un mapa que miente bonito.
+    ¿Prefieres las herramientas que te enseñan sus zonas borrosas, o las que las esconden?</p>
+  </div>
+</section>
+
+<!-- ─────────── 11 · Ejemplos famosos ─────────── -->
+
+<section class="chapter" id="c-famosas" data-chapter="Ejemplos famosos">
+  <p class="kicker reveal"><span class="act">11 ·</span> Canciones que ya conoces</p>
+  <h2 class="reveal">Cinco himnos, cinco casas</h2>
+  <div class="prose reveal">
+    <p class="lead">Hasta aquí todo han sido escalas, ruedas y perfiles. Es hora de mirar canciones de verdad.
+    Estas cinco no las he elegido al azar: son exactamente las que se usaron para probar el Tonalizador en producción,
+    y los datos que verás son <strong>los resultados reales</strong> que devolvió la herramienta.</p>
+    <p>Míralas con lo que ya sabes. Cada una tiene su nota-hogar, su estado de ánimo y su dirección en la rueda.
+    Y entre ellas hay parentescos que tu oído reconocerá en cuanto los escuche.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 12 · La sesión imposible</p>
+    <p class="panel-hint" style="margin:0 0 18px">Pon una canción en el plato. Debajo aparecerá qué otras encajan con
+    ella según la regla de la rueda — y podrás escuchar cada transición para comprobarlo con el oído, no con la teoría.</p>
+    <div class="famous-grid" id="famous-grid"></div>
+    <div class="famous-desk" id="famous-desk" aria-live="polite"></div>
+  </div>
+
+  <div class="prose reveal">
+    <p>Fíjate en lo que aparece ahí: <strong>Billie Jean</strong> (10A) y <strong>Hotel California</strong> (10B) son
+    la misma familia de notas con distinto jefe — relativas, primas hermanas. Y <strong>Rolling in the Deep</strong> (4B)
+    con <strong>Smells Like Teen Spirit</strong> (3B) son vecinas de número. Cuatro canciones de cuatro décadas y cuatro
+    géneros distintos que, sin haberlo acordado jamás, viven puerta con puerta.</p>
+    <p>La excepción es <em>Bohemian Rhapsody</em>: su 5A no encaja con ninguna de las otras. Y tiene todo el sentido,
+    porque su tonalidad global es el resumen de una canción que se muda de casa varias veces. El dato no es falso:
+    simplemente no cuenta toda la historia. Ya sabes leerlo así.</p>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 13 · El truco de los cuatro acordes</p>
+    <p class="panel-hint" style="margin:0 0 18px">Existe una secuencia de cuatro acordes que sostiene centenares de
+    canciones populares. Escúchala aquí y después múdala de casa: comprobarás que la sensación no depende de la
+    tonalidad elegida, sino de <em>las distancias entre sus acordes</em> — la misma receta del capítulo 4.</p>
+    <div class="btn-row" style="margin-bottom:16px">
+      <div class="seg" id="four-keys" role="group" aria-label="Tonalidad de la progresión"></div>
+    </div>
+    <div class="four-chords" id="four-chords"></div>
+    <div class="btn-row" style="margin-top:18px">
+      <button class="btn btn-primary" id="four-play" type="button">▶ Escuchar la progresión</button>
+      <span class="chip acc" id="four-label">Do Mayor · C · 8B</span>
+    </div>
+    <p class="panel-hint">Cada acorde se ilumina cuando suena. Cambia de tonalidad y vuelve a escuchar: cambian todas
+    las notas, una por una, y sin embargo la historia que cuentan es exactamente la misma.</p>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>Si una misma secuencia de distancias puede sostener un himno de estadio y una nana, ¿qué es entonces lo que hace
+    única a una canción? Quizá la tonalidad sea solo el escenario — y lo demás, la melodía, la voz, el silencio,
+    la función que se representa en él.</p>
+  </div>
+</section>
+
+<!-- ─────────── 12 · Manual de usuario ─────────── -->
+
+<section class="chapter" id="c-pasos" data-chapter="Manual de usuario">
+  <p class="kicker reveal"><span class="act">12 ·</span> Manos a la obra · Manual de usuario</p>
+  <h2 class="reveal">Los tres gestos: Importar, Analizar, Descargar</h2>
+  <div class="prose reveal">
+    <p class="lead">Con todo lo que ya comprendes, usar la herramienta es casi un trámite. Así que, en lugar de un
+    manual para leer, aquí tienes una <strong>misión para jugar</strong>: ocho escenas con capturas
+    <strong>reales</strong> de <a href="https://tonalizador.xosemiguel.eu/" target="_blank" rel="noopener">tonalizador.xosemiguel.eu</a>,
+    tomadas durante un análisis auténtico de cinco canciones — cuatro clásicos y una inventada, para que veas también
+    qué pasa cuando algo no se encuentra. En cada escena, <strong>explora los puntos luminosos</strong> sobre la
+    propia pantalla y supera un pequeño reto. Al final habrás usado la app entera… sin haberla abierto todavía.</p>
+  </div>
+
+  <div class="panel reveal" id="tour-panel">
+    <p class="panel-title">Misión guiada · La app real, escena a escena</p>
+    <div id="tour-root"></div>
+    <div id="tour-gallery">
+<figure class="shot">
+    <img src="img/app-01-portada.webp" alt="Portada de Tonalizador con los tres botones: Importar, Analizar y Descargar" loading="lazy">
+    <figcaption><span class="fig-num">Captura 1</span><strong>La portada.</strong> Los tres pasos son tres botones
+    gigantes: <strong>Importar</strong> (trae tus canciones), <strong>Analizar</strong> (las ordenamos) y
+    <strong>Descargar</strong> (recoge tus listas). Puedes pulsar cualquiera; la propia app te lleva al paso que toque.
+    Los tres permanecen siempre visibles en la cabecera, con una marca verde según los vas completando.</figcaption>
+  </figure>
+<figure class="shot">
+          <img src="img/app-02-importar.webp" alt="Pantalla Importar: botón Abrir TuneMyMusic, enlace Ya tengo el archivo CSV y opción Analizar una canción de mi dispositivo" loading="lazy">
+          <figcaption><span class="fig-num">Captura 2</span><strong>La pantalla Importar</strong> ofrece exactamente
+          tres caminos, y el esquema de la derecha resume el viaje: YouTube Music → un archivo CSV → Tonalizador.</figcaption>
+        </figure>
+<figure class="shot">
+          <img src="img/app-03-analizar.webp" alt="Pantalla Analizar antes de cargar nada: botón Elegir el archivo CSV de mi playlist" loading="lazy">
+          <figcaption><span class="fig-num">Captura 3</span><strong>El punto de entrada del paso 2.</strong>
+          «Ahora trae el archivo CSV aquí»: un único botón para elegir el archivo que guardaste. La app
+          «reconoce el formato por ti» (acepta los CSV de TuneMyMusic y de Google Takeout) y recuerda que
+          «puedes continuar más tarde» — el progreso vive en tu navegador.</figcaption>
+        </figure>
+<figure class="shot">
+          <img src="img/app-04-csv.webp" alt="Vista previa del CSV cargado: Encontramos 5 canciones, lista Un vistazo y botón Analizar mis canciones" loading="lazy">
+          <figcaption><span class="fig-num">Captura 4</span><strong>El archivo, preparado.</strong> «Encontramos 5
+          canciones», la lista completa a la derecha, y el aviso clave abajo: <em>«El archivo no se sube. Al analizar,
+          enviamos solo título y artista»</em>. Si te equivocaste de archivo, «Elegir otro archivo». Si todo cuadra,
+          <strong>«Analizar mis canciones»</strong>.</figcaption>
+        </figure>
+<figure class="shot">
+          <img src="img/app-05-resultados.webp" alt="Resultados del análisis: tarjeta explicativa de la cadena de fuentes y filas con tonalidad, Camelot y BPM por canción" loading="lazy">
+          <figcaption><span class="fig-num">Captura 5</span><strong>Tu lista completa.</strong> Arriba, «Qué hemos
+          hecho con cada canción»: las cuatro estaciones de la cadena que conociste en el Acto III — caché,
+          identificación con Spotify, tonalidad con ReccoBeats y audio solo si tú lo decides. Debajo, cada canción con
+          su recibo completo: la tonalidad en los tres idiomas (<em>Do menor · Cm · Camelot 5A</em>), los BPM,
+          la fuente (<em>Caché válida · ReccoBeats</em>) y la explicación en una frase. Fíjate en Hotel California:
+          «la única diferencia es que el catálogo identifica una remasterización» — la regla del remaster equivalente,
+          trabajando a la vista.</figcaption>
+        </figure>
+<figure class="shot">
+          <img src="img/app-06-revision.webp" alt="Fila de una canción sin tonalidad con etiqueta No la encontramos y botón Analizar audio" loading="lazy">
+          <figcaption><span class="fig-num">Captura 6</span><strong>El caso honesto.</strong> Nuestra canción
+          inventada termina en ámbar: «Sin tonalidad — No la encontramos. La búsqueda automática no obtuvo una
+          tonalidad suficientemente fiable». Y solo en esta fila aparece <strong>«Analizar audio»</strong>, con su
+          advertencia: analiza la canción completa, puede tardar varios minutos y el audio no sale del navegador.
+          El progreso, además, <em>se guarda solo</em>: si se corta internet, al volver continúa donde estaba.</figcaption>
+        </figure>
+<figure class="shot">
+          <img src="img/app-07-audio.webp" alt="Resultado del análisis acústico local: Do Mayor, Camelot 8B, confianza tonal 81 %, método local_hpcp_v2_full con cinco tramos detallados" loading="lazy">
+          <figcaption><span class="fig-num">Captura 7</span><strong>El laboratorio, en la app real.</strong> Le dimos
+          un archivo de audio y este es el veredicto del análisis local: <em>Do Mayor · C · Camelot 8B</em>, con
+          <strong>confianza tonal del 81 %</strong> y la etiqueta prudente «Confirma esta». Debajo, el método al
+          desnudo — perfil cromático local, 24 segundos analizados, canción completa en 5 tramos — y el voto de cada
+          tramo: 0–5 s Do Mayor (86 %), 5–10 s <em>La menor</em> (75 %), 10–14 s Sol Mayor (56 %)… Exactamente lo que
+          practicaste en el Experimento 8: tramos que discrepan, confianza medida, y la duda dicha en voz alta.</figcaption>
+        </figure>
+<figure class="shot">
+          <img src="img/app-08-descargar.webp" alt="Pantalla Descargar: 80 % ordenado, listas por tonalidad y botón Descargar todas las listas" loading="lazy">
+          <figcaption><span class="fig-num">Captura 8</span><strong>El resumen final.</strong> El anillo dice qué
+          parte de tu playlist quedó ordenada (aquí, 4 de 5: un honesto 80 %), las cajas de la derecha muestran tus
+          nuevas listas por tonalidad, y el aviso ámbar recuerda que «1 canción necesita una mirada» — sin colarla
+          jamás en una lista equivocada. El botón morado lo descarga todo en un único ZIP.</figcaption>
+        </figure>
+    </div>
+  </div>
+
+  <h3 class="reveal">La chuleta: los tres gestos en frío</h3>
+  <div class="steps reveal">
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h4>Importar — el inventario</h4>
+        <p>Tonalizador necesita la <em>lista</em> de tus canciones — no la música. Se consigue con
+        <strong>TuneMyMusic</strong> (gratuito), que convierte tu playlist en un archivo <strong>CSV</strong>:
+        el índice del libro, sin los capítulos. <em>(Escenas 1 y 2 de la misión.)</em></p>
+        <ul>
+          <li><strong>«Abrir TuneMyMusic»</strong>: exporta <strong>solo</strong> la playlist elegida a un archivo CSV.</li>
+          <li><strong>«Ya tengo el archivo CSV →»</strong>: salta directo al paso 2.</li>
+          <li><strong>«Analizar una canción de mi dispositivo»</strong>: el atajo sin CSV para un MP3, M4A, WAV, FLAC, OGG o AAC suelto.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h4>Analizar — el etiquetado</h4>
+        <p>Elige el CSV, comprueba el recuento y pulsa <strong>«Analizar mis canciones»</strong>. Cada canción
+        recorre la cadena de fuentes del Acto III y vuelve con su recibo completo. <em>(Escenas 3 a 7.)</em></p>
+        <ul>
+          <li>Tonalidad en tres idiomas, BPM, fuente y explicación, por cada fila.</li>
+          <li>El progreso <strong>se guarda solo</strong> en tu navegador: si se corta internet, continúa donde estaba.</li>
+          <li>¿Una fila sin dato fiable? Solo en ella aparece <strong>«Analizar audio»</strong>: el laboratorio local,
+          que examina la canción completa y devuelve su confianza tramo a tramo.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h4>Descargar — las cajas etiquetadas</h4>
+        <p>Revisa el resumen — el anillo te dice qué parte quedó ordenada — y pulsa
+        <strong>«Descargar todas las listas»</strong>. <em>(Escena 8.)</em> Recibes un único ZIP:</p>
+        <div class="zip-tree" aria-label="Contenido del archivo ZIP">playlists-por-tonalidad.zip
+├── <span class="f">Do menor.csv</span>, <span class="f">Re Mayor.csv</span>, … — un archivo por tonalidad, conservando tu orden original
+├── <span class="f">resumen.csv</span> — la tabla general con todos los datos de todas las canciones
+└── <span class="warn-f">revisar.csv</span> — solo si hace falta: las dudosas, para que decidas tú con calma</div>
+        <p style="margin-top:10px">¿Convertir una lista en playlist real? TuneMyMusic funciona también en sentido
+        inverso: importa el CSV de la tonalidad elegida. Tu playlist original no se toca en ningún momento.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Guía rápida · Todos los estados que puede mostrar una canción</p>
+    <div class="states-list">
+      <div class="state-row"><span class="chip ok">Lista</span><br><button class="btn tour-jump" data-scene="4" type="button" style="margin-top:8px;font-size:12px;padding:5px 11px">Ver en la escena 5 ↑</button>
+        <p>Clasificada con éxito. Verás la tonalidad en los tres idiomas, los BPM, la fuente y la explicación.
+        Entrará en su CSV de tonalidad al descargar.</p></div>
+      <div class="state-row"><span class="chip warn">Sin tonalidad</span><br><button class="btn tour-jump" data-scene="5" type="button" style="margin-top:8px;font-size:12px;padding:5px 11px">Ver en la escena 6 ↑</button>
+        <p>Ninguna fuente automática dio un dato fiable («No la encontramos» o «runner-up demasiado cerca»).
+        Va a <span class="mono">revisar.csv</span> y solo en su fila aparece «Analizar audio». No es un fallo:
+        es el sistema prefiriendo el hueco al error.</p></div>
+      <div class="state-row"><span class="chip acc">Confirma esta</span><br><button class="btn tour-jump" data-scene="6" type="button" style="margin-top:8px;font-size:12px;padding:5px 11px">Ver en la escena 7 ↑</button>
+        <p>Resultado del análisis acústico local con su confianza tonal. Si supera el umbral entra como fiable;
+        si no, se muestra como orientativo y espera tu confirmación. El detalle por tramos te enseña dónde dudó.</p></div>
+      <div class="state-row"><span class="chip">Corrección manual</span><br><button class="btn tour-jump" data-scene="6" type="button" style="margin-top:8px;font-size:12px;padding:5px 11px">Ver en la escena 7 ↑</button>
+        <p>La opción «Corrección manual opcional» te deja fijar tú la tonalidad de cualquier canción. Se guarda
+        solo en tu navegador y nunca contamina la memoria compartida de otros usuarios.</p></div>
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Privacidad · Qué viaja y qué no</p>
+    <div class="prose" style="max-width:none">
+      <p style="margin-bottom:6px">🖥️ <strong>Se queda en tu dispositivo:</strong> el archivo CSV (se lee en tu navegador), tus archivos de audio (se analizan localmente y se descartan), tus correcciones manuales y el progreso del análisis.</p>
+      <p style="margin:0">🌐 <strong>Viaja a internet:</strong> únicamente títulos y artistas, lo mínimo para poder identificarlos en el catálogo. La herramienta no descarga música de ningún sitio: consulta datos <em>sobre</em> la música.</p>
+    </div>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>Tres botones por fuera, toda una filosofía por dentro. ¿Cuántas interfaces «simples» esconden decisiones
+    de diseño que merecerían un tutorial como este?</p>
+  </div>
+</section>
+
+<!-- ─────────── 12 · Aplicaciones ─────────── -->
+
+<section class="chapter" id="c-aplicaciones" data-chapter="Aplicaciones">
+  <p class="kicker reveal"><span class="act">13 ·</span> ¿Y para qué me sirve?</p>
+  <h2 class="reveal">Un mismo dato, muchas vidas posibles</h2>
+  <div class="prose reveal">
+    <p class="lead">La tonalidad es un dato pequeño con aplicaciones sorprendentemente diversas.
+    Estas son las más habituales — encuentra la tuya.</p>
+  </div>
+  <div class="apps-grid reveal">
+    <div class="app-card"><div class="emoji">🎧</div><h4>Playlists que fluyen</h4><p>Ordena las canciones para que cada una encaje con la siguiente y la lista suene como un todo, sin saltos bruscos.</p><span class="who">Cualquier persona</span></div>
+    <div class="app-card"><div class="emoji">🎤</div><h4>Cantar o tocar encima</h4><p>Saber el tono te dice si una canción te vendrá cómoda o se te irá demasiado aguda o grave — antes de empezar.</p><span class="who">Músicos y estudiantes</span></div>
+    <div class="app-card"><div class="emoji">🎚️</div><h4>Mezcla armónica</h4><p>Encadena códigos Camelot vecinos, como los DJ profesionales, para sesiones y fiestas sin choques.</p><span class="who">DJ y aficionados</span></div>
+    <div class="app-card"><div class="emoji">🧘</div><h4>Ambientes coherentes</h4><p>Listas para estudiar, yoga o cenas donde el clima (Mayor/menor) y el pulso (BPM) se mantienen estables.</p><span class="who">Espacios y rutinas</span></div>
+    <div class="app-card"><div class="emoji">🏫</div><h4>Enseñar teoría con datos reales</h4><p>Las canciones favoritas del alumnado, convertidas en ejemplos vivos de tonalidad, modo y parentesco armónico.</p><span class="who">Docentes</span></div>
+    <div class="app-card"><div class="emoji">🔍</div><h4>Curiosidad pura</h4><p>Descubrir en qué tono está esa canción que te obsesiona — incluso desde un MP3 guardado en un cajón digital.</p><span class="who">Mentes inquietas</span></div>
+  </div>
+
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 14 · Cabina de DJ</p>
+    <p class="panel-hint" style="margin:0 0 16px">Está sonando la canción del disco. Elige la siguiente:
+    solo una de las opciones respeta la regla de la rueda. Puedes escuchar la transición antes de decidir.
+    Cinco rondas — ¿cuántas encadenas?</p>
+    <div class="game-now">
+      <div class="now-disc" id="game-disc">8A</div>
+      <div><div style="font-weight:700" id="game-now-name">Sonando: La menor</div><div class="panel-hint" style="margin:2px 0 0" id="game-score">Ronda 1 de 5 · Aciertos: 0</div></div>
+    </div>
+    <div class="game-options" id="game-options"></div>
+    <div class="game-feedback" id="game-feedback" aria-live="polite"></div>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>El mismo número —«5A»— es técnica para el DJ, comodidad para quien canta y belleza para quien estudia.
+    Los datos no tienen un solo significado: tienen tantos como preguntas sepamos hacerles.</p>
+  </div>
+</section>
+
+<!-- ─────────── 13 · Errores frecuentes ─────────── -->
+
+<section class="chapter" id="c-errores" data-chapter="Errores frecuentes">
+  <p class="kicker reveal"><span class="act">14 ·</span> Vacuna contra malentendidos</p>
+  <h2 class="reveal">Seis ideas equivocadas (y sus antídotos)</h2>
+  <div class="prose reveal">
+    <p class="lead">Toda herramienta genera mitos a su alrededor. Voltea cada tarjeta para desactivarlos
+    uno a uno.</p>
+  </div>
+  <div class="flip-grid reveal" id="flip-grid">
+    <div class="flip" role="button" tabindex="0" aria-pressed="false"><div class="flip-face flip-front"><span class="myth">«El Tonalizador escucha mis canciones desde YouTube»</span><span class="cta">Toca para voltear</span></div><div class="flip-face flip-back"><span class="truth">En realidad…</span><p>No descarga ni escucha nada de internet. Consulta <em>datos sobre</em> las canciones en catálogos. Solo «escucha» si tú le das un archivo tuyo — y entonces lo hace dentro de tu dispositivo.</p></div></div>
+    <div class="flip" role="button" tabindex="0" aria-pressed="false"><div class="flip-face flip-front"><span class="myth">«Si no da resultado, es que falla»</span><span class="cta">Toca para voltear</span></div><div class="flip-face flip-back"><span class="truth">En realidad…</span><p>Un hueco es el sistema funcionando: ninguna fuente dio un dato fiable y la herramienta prefirió confesarlo a inventar. Tienes el análisis acústico y la corrección manual como salidas.</p></div></div>
+    <div class="flip" role="button" tabindex="0" aria-pressed="false"><div class="flip-face flip-front"><span class="myth">«La tonalidad que da es LA verdad musical»</span><span class="cta">Toca para voltear</span></div><div class="flip-face flip-back"><span class="truth">En realidad…</span><p>Es un dato de catálogo de gran calidad, no un dictamen musicológico. Canciones que modulan reciben su tonalidad predominante. Por eso cada resultado muestra su fuente y admite corrección.</p></div></div>
+    <div class="flip" role="button" tabindex="0" aria-pressed="false"><div class="flip-face flip-front"><span class="myth">«Sube mis MP3 a un servidor para analizarlos»</span><span class="cta">Toca para voltear</span></div><div class="flip-face flip-back"><span class="truth">En realidad…</span><p>El análisis acústico ocurre íntegramente en tu navegador: el archivo no se sube, no se guarda y se descarta al terminar. Puedes comprobarlo: funciona incluso sin conexión.</p></div></div>
+    <div class="flip" role="button" tabindex="0" aria-pressed="false"><div class="flip-face flip-front"><span class="myth">«Las dos confianzas son lo mismo»</span><span class="cta">Toca para voltear</span></div><div class="flip-face flip-back"><span class="truth">En realidad…</span><p>Una mide si se encontró <em>la grabación correcta</em>; la otra, la seguridad sobre <em>la tonalidad misma</em>. Puedes tener la primera altísima y la segunda ausente — y la herramienta jamás rellena el hueco con un número inventado.</p></div></div>
+    <div class="flip" role="button" tabindex="0" aria-pressed="false"><div class="flip-face flip-front"><span class="myth">«Modificará mis playlists de YouTube Music»</span><span class="cta">Toca para voltear</span></div><div class="flip-face flip-back"><span class="truth">En realidad…</span><p>Solo lee una copia de la lista (el CSV) y produce archivos nuevos. Tu playlist original queda intacta. Importar las listas resultantes es una decisión — y un gesto — exclusivamente tuyo.</p></div></div>
+  </div>
+
+  <div class="ponder reveal">
+    <span class="tag">Para seguir pensando</span>
+    <p>¿Notas el patrón? Casi todos los mitos nacen de no saber <em>cómo</em> funciona algo por dentro.
+    La comprensión no es un lujo: es la vacuna.</p>
+  </div>
+</section>
+
+<!-- ─────────── 14 · Quiz final ─────────── -->
+
+<section class="chapter" id="c-quiz" data-chapter="El reto final">
+  <p class="kicker reveal"><span class="act">15 ·</span> El reto final</p>
+  <h2 class="reveal">¿Piensas ya como el Tonalizador?</h2>
+  <div class="prose reveal">
+    <p class="lead">Seis preguntas. No miden memoria: miden criterio — esa forma de pensar que has ido
+    construyendo durante el viaje.</p>
+  </div>
+  <div class="panel reveal" id="quiz-panel">
+    <p class="panel-title">Experimento 15 · Autoevaluación con criterio</p>
+    <div id="quiz-body"></div>
+  </div>
+</section>
+
+<!-- ─────────── 15 · Conclusión ─────────── -->
+
+<section class="chapter finale" id="c-final" data-chapter="Conclusión">
+  <p class="kicker reveal" style="justify-content:center"><span class="act">16 ·</span> El final que es un principio</p>
+  <h2 class="reveal">Comprender es participar del descubrimiento</h2>
+  <div class="prose reveal" style="text-align:left">
+    <p class="lead" style="text-align:center">Detrás de cada interfaz, de cada algoritmo y de cada resultado hay
+    personas que observaron un problema, hicieron preguntas e imaginaron soluciones. Usar una herramienta es útil;
+    <strong>comprenderla es participar de ese mismo proceso</strong>.</p>
+    <p>Ahora sabes qué es una tonalidad y por qué tu oído la siente como un hogar. Sabes que una máquina puede
+    encontrarla pesando doce notas y comparando huellas. Sabes por qué la herramienta consulta antes de escuchar,
+    por qué exige identificar la grabación exacta, y por qué su gesto más valioso es admitir la duda en voz alta.
+    Ya no dependes de instrucciones: tienes criterio. Puedes explorar, hacer preguntas nuevas y resolver problemas
+    que nadie te ha enseñado a resolver.</p>
+  </div>
+
+  <div class="epilogue" id="epilogue">
+    <canvas id="epilogue-canvas" aria-hidden="true"></canvas>
+    <div class="ep-glyph-space" aria-hidden="true"></div>
+    <div class="epilogue-inner">
+      <p class="ep-kicker reveal">La última pregunta</p>
+      <p class="ep-line reveal">Toda herramienta es <strong>inteligencia humana cristalizada</strong>: detrás de cada
+      algoritmo hay personas que observaron un problema y se atrevieron a preguntar.</p>
+      <p class="ep-line reveal">Usarla es útil. <strong>Comprenderla es participar del mismo descubrimiento.</strong></p>
+      <p class="ep-line reveal">Aprender no es memorizar pasos: es construir una forma de pensar. Quien entiende
+      el porqué deja de seguir instrucciones — y empieza a tener <strong>criterio</strong>.</p>
+      <p class="ep-line reveal">Cuanto más poderosa es una herramienta, más importa comprender sus fundamentos:
+      una respuesta vale mucho más cuando sabes <strong>cómo fue obtenida</strong>.</p>
+      <p class="ep-line reveal">Las máquinas amplían la memoria y aceleran el cálculo. La curiosidad, la imaginación
+      y el juicio crítico siguen siendo <strong>profundamente humanos</strong>.</p>
+      <p class="ep-question reveal">Antes de esperar que una herramienta te dé una respuesta,<br>
+      <span class="grad">pregúntate cómo pedírselo para obtener lo que quieres.</span></p>
+    </div>
+  </div>
+
+  <div class="cta-final reveal">
+    <a class="btn btn-primary" href="https://tonalizador.xosemiguel.eu/" target="_blank" rel="noopener" style="font-size:16px;padding:14px 28px">Abrir Tonalizador y ordenar tu música ↗</a>
+    <span class="panel-hint">Gratuito · Sin cuentas · Tu audio nunca sale de tu dispositivo</span>
+  </div>
+</section>
+
+<footer class="colophon">
+  <p>Tutorial interactivo de <a href="https://tonalizador.xosemiguel.eu/" target="_blank" rel="noopener">Tonalizador</a> ·
+  Elaborado a partir del código fuente real de la herramienta (algoritmo <span class="mono">local_hpcp_v2</span>,
+  cadena de fuentes <span class="mono">matching-v4</span>) y de su informe ejecutivo.<br>
+  Todo el sonido se sintetiza en tu navegador con WebAudio; ningún dato sale de esta página.
+  Los resultados de ejemplo proceden de las pruebas reales en producción (julio de 2026).</p>
+</footer>
+
+<script src="js/theory.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/chapters.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

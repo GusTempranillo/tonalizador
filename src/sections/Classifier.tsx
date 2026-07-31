@@ -15,6 +15,7 @@ import {
   ArrowRight,
   AudioLines,
   BadgeCheck,
+  BookOpen,
   Check,
   CheckCircle2,
   ChevronRight,
@@ -424,6 +425,17 @@ function HomeHero({
       <div className="ambient ambient-one" aria-hidden="true" />
       <div className="ambient ambient-two" aria-hidden="true" />
       <div className="ambient-grid" aria-hidden="true" />
+
+      <a
+        className="home-tutorial-link"
+        href="/tutorial/"
+        target="_blank"
+        rel="noopener"
+      >
+        <BookOpen aria-hidden="true" />
+        Tutorial
+        <ExternalLink aria-hidden="true" />
+      </a>
 
       <section className="home-artwork" aria-labelledby="home-title">
         <h1 id="home-title" className="sr-only">

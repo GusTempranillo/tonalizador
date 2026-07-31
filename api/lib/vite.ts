@@ -9,9 +9,10 @@ type App = Hono<{ Bindings: HttpBindings }>;
 export function serveStaticFiles(app: App) {
   const distPath = path.resolve(process.cwd(), "dist/public");
 
+  app.get("/tutorial", c => c.redirect("/tutorial/", 308));
   app.use("*", serveStatic({ root: "./dist/public" }));
 
-  app.notFound((c) => {
+  app.notFound(c => {
     const accept = c.req.header("accept") ?? "";
     if (!accept.includes("text/html")) {
       return c.json({ error: "Not Found" }, 404);

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AudioLines,
+  BookOpen,
   Download,
+  ExternalLink,
   FileOutput,
   Lightbulb,
   ListChecks,
@@ -147,31 +149,43 @@ export default function Guide({
           </button>
         </header>
 
-        <div className="help-tabs" role="tablist" aria-label="Tipo de ayuda">
-          <button
-            id="help-tab-instructions"
-            type="button"
-            role="tab"
-            aria-selected={mode === "instructions"}
-            aria-controls="help-panel"
-            className={mode === "instructions" ? "is-active" : ""}
-            onClick={() => setMode("instructions")}
+        <div className="help-navigation">
+          <div className="help-tabs" role="tablist" aria-label="Tipo de ayuda">
+            <button
+              id="help-tab-instructions"
+              type="button"
+              role="tab"
+              aria-selected={mode === "instructions"}
+              aria-controls="help-panel"
+              className={mode === "instructions" ? "is-active" : ""}
+              onClick={() => setMode("instructions")}
+            >
+              <ListChecks aria-hidden="true" />
+              ¿Qué tienes que hacer?
+            </button>
+            <button
+              id="help-tab-reason"
+              type="button"
+              role="tab"
+              aria-selected={mode === "reason"}
+              aria-controls="help-panel"
+              className={mode === "reason" ? "is-active" : ""}
+              onClick={() => setMode("reason")}
+            >
+              <Lightbulb aria-hidden="true" />
+              ¿Qué hace la herramienta?
+            </button>
+          </div>
+          <a
+            className="help-tutorial-link"
+            href="/tutorial/"
+            target="_blank"
+            rel="noopener"
           >
-            <ListChecks aria-hidden="true" />
-            ¿Qué tienes que hacer?
-          </button>
-          <button
-            id="help-tab-reason"
-            type="button"
-            role="tab"
-            aria-selected={mode === "reason"}
-            aria-controls="help-panel"
-            className={mode === "reason" ? "is-active" : ""}
-            onClick={() => setMode("reason")}
-          >
-            <Lightbulb aria-hidden="true" />
-            ¿Qué hace la herramienta?
-          </button>
+            <BookOpen aria-hidden="true" />
+            Tutorial
+            <ExternalLink aria-hidden="true" />
+          </a>
         </div>
 
         <div
