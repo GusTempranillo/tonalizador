@@ -1645,15 +1645,19 @@ window.Store = (() => {
             <div class="hud-actions">
               <button class="btn hud-ctl" id="tour-fs" type="button" title="Pantalla completa (las flechas ← → cambian de escena)">⛶ Pantalla completa</button>
               <button class="btn hud-ctl" id="hud-reset" type="button" title="Vuelve a empezar la misión con el marcador a cero">↺ Reiniciar marcador</button>
+              <button class="btn hud-ctl gold" id="hud-diploma" type="button" hidden title="Vuelve a abrir tu diploma">🎓 Mi diploma</button>
             </div>
           </div>
-          <div class="tour-final" id="tour-final" hidden></div>
           <div class="tour-reto" id="tour-reto"></div>
           <div class="tour-nav">
             <button class="btn" id="tour-prev" type="button">← Anterior</button>
             <button class="btn btn-primary" id="tour-next" type="button">Siguiente →</button>
+            <button class="tour-continue" id="tour-continue" type="button" hidden>Seguir viendo el tutorial ↓</button>
           </div>
         </div>
+        <!-- El diploma va SOBRE el tablero, no dentro de la columna:
+             si se insertara en el flujo, empujaría la captura fuera de la pantalla. -->
+        <div class="tour-final" id="tour-final" hidden></div>
       </div>`;
 
     const stage = $("#tour-stage"), retoBox = $("#tour-reto");
@@ -1733,12 +1737,33 @@ window.Store = (() => {
       return ["🎓", "Misión cumplida", "Has llegado al final. Pon el marcador a cero y bate tu propia puntuación: el segundo viaje siempre se ve más claro."];
     }
 
+    function closeFinalBanner() {
+      const fin = $("#tour-final");
+      if (fin) fin.hidden = true;
+      const db = $("#hud-diploma");
+      if (db) db.hidden = false;   // se puede reabrir cuando quieras
+    }
+
+    /* Misión terminada → seguir con el tutorial: cierra el diploma, sale de
+       pantalla completa y viaja a «La chuleta: los tres gestos en frío». */
+    function goChuleta() {
+      closeFinalBanner();
+      exitFs();
+      const target = document.getElementById("chuleta");
+      if (!target) return;
+      /* Pequeña espera: el navegador tarda unos fotogramas en devolver la
+         página a su tamaño normal, y desplazarse antes descoloca el destino. */
+      setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "start" }), 280);
+    }
+
     function showFinalBanner(silent) {
       const p = points();
       const [emoji, title, text] = rankFor(p);
       const fin = $("#tour-final");
       fin.hidden = false;
-      fin.innerHTML = `<span class="tf-emoji">${emoji}</span>
+      fin.innerHTML = `<div class="tf-card">
+        <button class="tf-close" id="tf-close" type="button" aria-label="Cerrar y volver al tablero">✕</button>
+        <span class="tf-emoji">${emoji}</span>
         <div class="tf-text"><strong>${title} — ${p} puntos</strong> (${fails} ${fails === 1 ? "fallo" : "fallos"})<br>
         <span>${text}</span>
         <div class="tf-diploma">
@@ -1747,9 +1772,14 @@ window.Store = (() => {
           <button class="btn btn-primary" id="tf-dip" type="button" disabled>🎓 Descargar diploma</button>
           <button class="btn" id="tf-again" type="button">↺ Volver a jugar</button>
         </div>
-        <p class="tf-hint" id="tf-hint">El diploma va a tu nombre: escríbelo para poder descargarlo.</p></div>`;
+        <p class="tf-hint" id="tf-hint">El diploma va a tu nombre: escríbelo para poder descargarlo.</p>
+        <button class="tf-back" id="tf-back" type="button">Seguir viendo el tutorial</button></div></div>`;
 
       $("#tf-again").addEventListener("click", resetGame);
+      $("#tf-close").addEventListener("click", closeFinalBanner);
+      $("#tf-back").addEventListener("click", goChuleta);
+      /* Clic en el fondo oscuro (fuera de la tarjeta) = cerrar */
+      fin.addEventListener("click", e => { if (e.target === fin) closeFinalBanner(); });
 
       const nameInput = $("#tf-name"), dipBtn = $("#tf-dip"), hint = $("#tf-hint");
       nameInput.value = Store.get(NAME_KEY, "") || "";
@@ -1773,7 +1803,9 @@ window.Store = (() => {
         e.preventDefault();
         if (validName()) dipBtn.click(); else hint.hidden = false;
       });
-      if (!silent) fin.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      /* Nada de scrollIntoView: la tarjeta ya está centrada sobre el tablero.
+         Al desplazar el panel se empujaba la captura fuera de la pantalla. */
+      if (!silent) setTimeout(() => nameInput.focus({ preventScroll: true }), 60);
     }
 
     function checkFinal() {
@@ -1790,6 +1822,8 @@ window.Store = (() => {
       finalsSolved.fill(false);
       visited.forEach(v => v.clear());
       $("#tour-final").hidden = true;
+      const db = $("#hud-diploma");
+      if (db) db.hidden = true;
       const rb = $("#hud-reset");
       if (rb) { rb.textContent = "↺ Reiniciar marcador"; rb.classList.remove("danger"); }
       saveGame();
@@ -2079,6 +2113,7 @@ window.Store = (() => {
       paintProgress();
       $("#tour-prev").disabled = false;
       $("#tour-next").textContent = "Volver al principio ↻";
+      $("#tour-continue").hidden = false;
     }
 
     function go(i) {
@@ -2132,10 +2167,15 @@ window.Store = (() => {
       paintProgress();
       $("#tour-prev").disabled = cur === 0;
       $("#tour-next").textContent = cur === TOUR.length - 1 ? "Retos finales ★" : "Siguiente →";
+      $("#tour-continue").hidden = true; // solo se ofrece en la ronda final
     }
 
     $("#tour-prev").addEventListener("click", () => go(cur - 1));
     $("#tour-next").addEventListener("click", () => go(cur + 1));
+
+    /* Cerrar el diploma no lo pierde: se reabre desde el marcador. */
+    $("#hud-diploma").addEventListener("click", () => showFinalBanner(true));
+    $("#tour-continue").addEventListener("click", goChuleta);
 
     /* Reiniciar pide confirmación si hay algo que perder */
     const resetBtn = $("#hud-reset");
