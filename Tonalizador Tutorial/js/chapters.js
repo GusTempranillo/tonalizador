@@ -105,11 +105,20 @@ window.Store = (() => {
       flash(m);
     });
 
-    function flash(m, ms = 420) {
+    /* Un temporizador por tecla: si la misma nota vuelve a sonar antes de apagarse,
+       el temporizador viejo ya no puede apagar el destello nuevo. */
+    const flashTimers = new Map();
+    /* 560 ms por defecto: al pulsar a mano, la nota suena 0,9 s — un destello
+       de 420 ms se apagaba mucho antes de que la tecla dejara de sonar. */
+    function flash(m, ms = 560) {
       const el = keys.get(m) ?? keys.get(60 + (m % 12));
       if (!el) return;
+      clearTimeout(flashTimers.get(el));
       el.classList.add("active");
-      setTimeout(() => el.classList.remove("active"), ms);
+      flashTimers.set(el, setTimeout(() => {
+        el.classList.remove("active");
+        flashTimers.delete(el);
+      }, ms));
     }
 
     function paintScale(pcSet, tonicPc) {
