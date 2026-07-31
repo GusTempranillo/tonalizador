@@ -1167,26 +1167,121 @@ html.io .reveal.is-visible { opacity: 1; transform: none; }
 }
 
 .modulation-timeline { margin-top: 18px; }
+.mod-scroller { overflow-x: auto; padding-bottom: 4px; }
+.mod-scroll-hint { display: none; }
+@media (max-width: 660px) {
+  .mod-scroll-hint {
+    display: block;
+    margin: 6px 0 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+}
 
 .mod-track {
   display: flex;
-  height: 54px;
+  height: 66px;
+  min-width: 520px;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--line-strong);
 }
 
 .mod-seg {
-  display: grid;
-  place-items: center;
-  font-size: 12.5px;
-  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 2px;
+  line-height: 1.15;
   color: #0b0c16;
-  transition: filter 0.2s;
+  transition: filter 0.2s, box-shadow 0.2s;
   cursor: pointer;
   border: none;
+  position: relative;
 }
-.mod-seg:hover { filter: brightness(1.2); }
+.mod-seg .ms-name { font-size: 12.5px; font-weight: 800; }
+.mod-seg .ms-key { font-size: 10.5px; font-weight: 600; opacity: 0.78; }
+.mod-seg:hover { filter: brightness(1.18); }
+
+/* Separador entre tramos: si no, dos tramos con la MISMA tonalidad
+   (mismo color) se funden en uno y no se pueden contar. */
+.mod-seg + .mod-seg { border-left: 1px solid rgba(0, 0, 0, 0.3); }
+
+/* Y donde la canción se muda, la costura se marca: la mudanza se ve
+   en la propia línea de tiempo, sin tener que pulsar nada. */
+.mod-seg.moved { border-left: 3px dashed rgba(12, 10, 20, 0.72); }
+.mod-seg.moved::before {
+  content: "🚚";
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  font-size: 11px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+}
+
+/* Tramo seleccionado: anillo blanco interior, visible sobre cualquier color. */
+.mod-seg.on {
+  filter: brightness(1.28);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.92), 0 0 22px rgba(255, 255, 255, 0.28);
+  z-index: 1;
+}
+
+/* ---- Ficha del tramo que se está escuchando ---- */
+
+.mod-now {
+  margin-top: 14px;
+  min-height: 132px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.mod-idle { margin: 0; color: var(--text-dim); font-size: 14px; }
+.mod-now-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
+.mod-now-n {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px;
+}
+.mod-now-head strong { font-size: 19px; }
+.mod-now-key { margin: 0 0 8px; font-size: 15px; }
+.mod-now-cam {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  border: 1px solid var(--line-strong); border-radius: 6px; padding: 1px 7px; margin-left: 6px;
+}
+.mod-now-move { margin: 0 0 8px; }
+.mod-move { font-size: 13px; font-weight: 700; }
+.mod-move.go { color: var(--warm, #ffb86b); }
+.mod-move.stay { color: var(--text-dim); }
+.mod-move.start { color: var(--text-dim); }
+.mod-now-say { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--text-dim); }
+.mod-now-say b { color: var(--text); }
+
+/* ---- La comparación que da sentido al experimento (siempre visible) ---- */
+
+.mod-global {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warm, #ffb86b);
+  border-radius: 12px;
+  background: rgba(255, 184, 107, 0.05);
+}
+.mod-g-line { margin: 0 0 6px; font-size: 15px; }
+.mod-g-key {
+  display: inline-block; font-weight: 800; color: var(--warm, #ffb86b);
+  border: 1px solid rgba(255, 184, 107, 0.45); border-radius: 8px; padding: 2px 10px; margin-left: 2px;
+}
+.mod-g-why { margin: 10px 0 0; font-size: 14px; line-height: 1.6; color: var(--text-dim); }
+.mod-g-why b { color: var(--text); }
+
+@media (max-width: 560px) {
+  .mod-now-head strong { font-size: 17px; }
+  .mod-g-key { margin-top: 4px; }
+}
 
 /* --------------------------------------------------------------------------
    Guía de pasos (Exportar / Analizar / Descargar)

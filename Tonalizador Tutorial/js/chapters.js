@@ -1042,27 +1042,88 @@ window.Store = (() => {
   function initModulation() {
     const track = $("#mod-track");
     if (!track) return;
-    const segs = [
-      { name: "Intro coral", key: "A#", pc: 10, mode: 1, w: 15 },
-      { name: "Balada", key: "A#", pc: 10, mode: 1, w: 30 },
-      { name: "Ópera", key: "A", pc: 9, mode: 1, w: 20 },
-      { name: "Rock", key: "D#", pc: 3, mode: 1, w: 20 },
-      { name: "Final", key: "Cm", pc: 0, mode: 0, w: 15 },
-    ];
     const caption = $("#mod-caption");
-    segs.forEach(s => {
+    const globalBox = $("#mod-global");
+
+    /* Cada tramo cuenta algo propio: si el texto no cambiara al pulsar,
+       el experimento no enseñaría nada. */
+    const segs = [
+      {
+        name: "Intro", key: "A#", pc: 10, mode: 1, w: 15,
+        say: "Arranca solo con voces, sin un instrumento. Aun así, desde el primer segundo la canción ya está en una tonalidad concreta: esta es la casa donde nace.",
+      },
+      {
+        name: "Balada", key: "A#", pc: 10, mode: 1, w: 30,
+        say: "Entra el piano y la canción se acomoda. Fíjate en que <b>no se ha movido</b>: sigue en la misma tonalidad que la intro. Y es el tramo más largo de todos — recuerda este detalle, porque decidirá el final del experimento.",
+      },
+      {
+        name: "Ópera", key: "A", pc: 9, mode: 1, w: 20,
+        say: "Primera mudanza. La canción baja un peldaño y se instala en otra tonalidad. Aquí se amontonan coros, voces sueltas y cambios rapidísimos: es el tramo más difícil de reducir a un solo nombre.",
+      },
+      {
+        name: "Rock", key: "D#", pc: 3, mode: 1, w: 20,
+        say: "Entran las guitarras y la canción se muda otra vez, ahora a un barrio bastante lejos del de partida. Nada de esto es un error de nadie: es la canción cambiando de tema y de humor.",
+      },
+      {
+        name: "Final", key: "Cm", pc: 0, mode: 0, w: 15,
+        say: "Todo se apaga y la canción cierra en <b>modo menor</b>, más recogido — el único tramo que no es Mayor. Es el color con el que te quedas cuando termina.",
+      },
+    ];
+
+    const distintas = new Set(segs.map(s => s.key)).size;
+    const mudanzas = segs.filter((s, i) => i > 0 && segs[i - 1].key !== s.key).length;
+
+    const IDLE = `<p class="mod-idle">👆 Toca el primer bloque, <b>Intro</b>, para empezar a recorrer la canción.</p>`;
+    caption.innerHTML = IDLE;
+
+    /* El «para qué» del experimento, siempre visible: la comparación es el mensaje. */
+    globalBox.innerHTML = `
+      <p class="mod-g-line">Esta canción se muda <b>${mudanzas} veces</b> y pasa por <b>${distintas} tonalidades distintas</b>…</p>
+      <p class="mod-g-line">…y el Tonalizador la etiqueta con <b>un solo dato</b>:
+        <span class="mod-g-key">Do menor · 5A · 143 BPM</span></p>
+      <p class="mod-g-why">¿Se está equivocando? No. Está <b>resumiendo</b>. La etiqueta recoge la tonalidad
+        <b>predominante</b>: la que más manda a lo largo de toda la canción (por eso importaba que la balada fuera
+        el tramo más largo). Es como decir que una película «es una comedia» aunque tenga una escena triste:
+        no es falso, es lo que necesitas para saber en qué estante ponerla.</p>
+      <p class="mod-g-why">Y ese es justo el trabajo del Tonalizador: <b>ordenar tu playlist</b>, no hacer el
+        análisis musicológico de cada minuto. Para ordenar hace falta un dato por canción.</p>`;
+
+    segs.forEach((s, i) => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "mod-seg";
       b.style.width = `${s.w}%`;
       b.style.background = T.pitchColor(s.pc, 0.75);
-      b.textContent = s.name;
-      b.setAttribute("aria-label", `${s.name}: ${T.keyToSpanish(s.key)}`);
+      b.innerHTML = `<span class="ms-name">${s.name}</span><span class="ms-key">${T.keySpanishShort(s.pc, s.mode)}</span>`;
+      /* Marca la costura donde la canción cambia de tonalidad: la mudanza
+         se ve en la línea de tiempo antes de pulsar nada. */
+      if (i > 0 && segs[i - 1].key !== s.key) b.classList.add("moved");
+      b.setAttribute("aria-label",
+        `Tramo ${i + 1} de ${segs.length}: ${s.name}, en ${T.keyToSpanish(s.key)}`
+        + (i > 0 ? (segs[i - 1].key !== s.key ? ". Cambia de tonalidad" : ". Misma tonalidad que el anterior") : ""));
       b.addEventListener("click", () => {
         AE.playSequence(AP.progressionEvents(s.pc, s.mode, [0, 4, 0], { beat: 0.55 }));
-        caption.innerHTML = `<strong>${s.name}</strong> — color local: ${T.keyToSpanish(s.key)} (${T.keyToCamelot(s.key)}).
-          El dato global de la canción sigue siendo uno solo — «Do menor · 5A · 143 BPM» — porque para <em>clasificar</em>
-          hace falta un resumen, igual que un libro necesita un solo estante aunque hable de mil cosas.`;
+        track.querySelectorAll(".mod-seg").forEach(x => x.classList.remove("on"));
+        b.classList.add("on");
+
+        const cambia = i > 0 && segs[i - 1].key !== s.key;
+        const move = i === 0
+          ? `<span class="mod-move start">▶ Punto de partida</span>`
+          : cambia
+            ? `<span class="mod-move go">🚚 Se muda — cambia de tonalidad respecto al tramo anterior</span>`
+            : `<span class="mod-move stay">🏠 Se queda — misma tonalidad que el tramo anterior</span>`;
+
+        caption.innerHTML = `
+          <p class="mod-now-head">
+            <span class="mod-now-n">Tramo ${i + 1} de ${segs.length}</span>
+            <strong>${s.name}</strong>
+          </p>
+          <p class="mod-now-key">Este tramo suena en
+            <b style="color:${T.pitchColor(s.pc, 1)}">${T.keyToSpanish(s.key)}</b>
+            <span class="mod-now-cam">${T.keyToCamelot(s.key)}</span>
+          </p>
+          <p class="mod-now-move">${move}</p>
+          <p class="mod-now-say">${s.say}</p>`;
       });
       track.appendChild(b);
     });

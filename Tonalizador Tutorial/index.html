@@ -634,13 +634,17 @@
 
   <div class="panel reveal">
     <p class="panel-title">Experimento 11 · Una canción que se muda de casa</p>
-    <p class="panel-hint" style="margin:0 0 14px">Línea de tiempo estilizada de una canción que modula
-    (inspirada en <em>Bohemian Rhapsody</em>, catalogada globalmente como Do menor · 5A · 143 BPM). Toca cada tramo
-    para escuchar su color local.</p>
+    <p class="panel-hint" style="margin:0 0 14px">Abajo tienes <strong>una canción entera</strong>, del primer segundo
+    al último, estirada como una tira de tiempo. Cada bloque es un tramo de la canción, y su color te dice
+    <strong>en qué tonalidad suena ese tramo</strong>. Es una versión simplificada de <em>Bohemian Rhapsody</em>.
+    <strong>Tócalos de izquierda a derecha</strong>, como si escucharas la canción, y fíjate en cuándo cambia el color.</p>
     <div class="modulation-timeline">
-      <div class="mod-track" id="mod-track" role="group" aria-label="Tramos de la canción"></div>
-      <p class="panel-hint" id="mod-caption" style="margin-top:12px">Un solo dato global — «Do menor» — resume un paisaje
-      que en realidad cambia de color. Ni error ni mentira: un resumen. Como decir «España es soleada».</p>
+      <div class="mod-scroller">
+        <div class="mod-track" id="mod-track" role="group" aria-label="Tramos de la canción"></div>
+      </div>
+      <p class="mod-scroll-hint">← desliza la barra para recorrer la canción entera →</p>
+      <div class="mod-now" id="mod-caption"></div>
+      <div class="mod-global" id="mod-global"></div>
     </div>
   </div>
 
