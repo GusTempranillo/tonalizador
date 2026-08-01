@@ -1737,11 +1737,28 @@ window.Store = (() => {
       return ["🎓", "Misión cumplida", "Has llegado al final. Pon el marcador a cero y bate tu propia puntuación: el segundo viaje siempre se ve más claro."];
     }
 
+    /* El diploma acredita los 12 retos: sin ellos no se emite. Se comprueba
+       aquí, en un único sitio, y no en cada botón que pueda abrir la tarjeta.
+       (Antes bastaba con pulsar «Seguir viendo el tutorial ↓» en la ronda
+       final para que apareciera el botón «🎓 Mi diploma» con el marcador a
+       cero: cerrar la tarjeta lo mostraba sin preguntar nada.) */
+    const isComplete = () => solved.every(Boolean) && finalsSolved.every(Boolean);
+
+    /* Primer reto pendiente: a donde llevar a quien aún no ha terminado. */
+    const firstPending = () => {
+      const i = solved.findIndex(v => !v);
+      return i === -1 ? TOUR.length : i;
+    };
+
+    function syncDiplomaBtn() {
+      const db = $("#hud-diploma");
+      if (db) db.hidden = !isComplete();
+    }
+
     function closeFinalBanner() {
       const fin = $("#tour-final");
       if (fin) fin.hidden = true;
-      const db = $("#hud-diploma");
-      if (db) db.hidden = false;   // se puede reabrir cuando quieras
+      syncDiplomaBtn();   // se puede reabrir cuando quieras… si está ganado
     }
 
     /* Misión terminada → seguir con el tutorial: cierra el diploma, sale de
@@ -1767,7 +1784,32 @@ window.Store = (() => {
       setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "start" }), 280);
     }
 
+    /* Aviso cuando se pide el diploma antes de tiempo: mismo formato de
+       tarjeta que el diploma, pero con la puerta cerrada y el camino señalado. */
+    function showLockedBanner() {
+      const done = solvedCount();
+      const faltan = TOTAL_RETOS - done;
+      const fin = $("#tour-final");
+      fin.hidden = false;
+      fin.innerHTML = `<div class="tf-card">
+        <button class="tf-close" id="tf-close" type="button" aria-label="Cerrar y volver al tablero">✕</button>
+        <span class="tf-emoji">🔒</span>
+        <div class="tf-text"><strong>El diploma todavía no</strong><br>
+        <span>Para obtener el diploma hay que superar los <b>${TOTAL_RETOS} retos</b> de la misión
+        (${TOUR.length} escenas + ${FINALS.length} finales). Llevas <b>${done} de ${TOTAL_RETOS}</b>:
+        te ${faltan === 1 ? "queda <b>1 reto</b>" : `quedan <b>${faltan} retos</b>`}.</span>
+        <p class="tf-hint">Un diploma que se da sin terminar la misión no acredita nada.
+        Termina los retos que faltan y la tarjeta se abrirá sola.</p>
+        <button class="tf-back" id="tf-seguir" type="button">Seguir con la misión →</button></div></div>`;
+
+      $("#tf-close").addEventListener("click", closeFinalBanner);
+      $("#tf-seguir").addEventListener("click", () => { closeFinalBanner(); go(firstPending()); });
+      fin.addEventListener("click", e => { if (e.target === fin) closeFinalBanner(); });
+    }
+
     function showFinalBanner(silent) {
+      /* Puerta única: cualquier camino hacia el diploma pasa por aquí. */
+      if (!isComplete()) { showLockedBanner(); return; }
       const p = points();
       const [emoji, title, text] = rankFor(p);
       const fin = $("#tour-final");
@@ -1839,8 +1881,7 @@ window.Store = (() => {
       finalsSolved.fill(false);
       visited.forEach(v => v.clear());
       $("#tour-final").hidden = true;
-      const db = $("#hud-diploma");
-      if (db) db.hidden = true;
+      syncDiplomaBtn();   // marcador a cero → el diploma vuelve a esconderse
       const rb = $("#hud-reset");
       if (rb) { rb.textContent = "↺ Reiniciar marcador"; rb.classList.remove("danger"); }
       saveGame();
