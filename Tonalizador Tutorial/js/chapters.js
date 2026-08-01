@@ -2394,6 +2394,10 @@ window.Store = (() => {
     let dpr = 1, W = 0, H = 0;
     let particles = [], links = [], bgStars = [], star = null;
     let formT0 = null, running = false, raf = 0, shock = 0;
+    /* El punto del «?» es lo único clicable del epílogo y nada lo anuncia:
+       late como un corazón y emite ondas hasta que alguien lo descubre. */
+    const BEAT_MS = 1500;
+    let discovered = false, hoverStar = false;
 
     /* Muestrea la silueta de un «?» dibujándolo en un lienzo oculto. */
     function sampleGlyph() {
@@ -2529,8 +2533,29 @@ window.Store = (() => {
       ctx.shadowBlur = 0;
 
       if (star) {
-        const pulse = 0.72 + 0.28 * Math.sin(now / 500);
-        const R = (7 + star.burst * 10) * dpr;
+        /* Latido «lub-dub»: dos pulsos seguidos y reposo. Un parpadeo senoidal
+           parecía decoración; un latido parece algo vivo, y lo vivo se toca. */
+        const cyc = (now % BEAT_MS) / BEAT_MS;
+        const lub = Math.exp(-Math.pow((cyc - 0.05) / 0.05, 2));
+        const dub = 0.6 * Math.exp(-Math.pow((cyc - 0.20) / 0.055, 2));
+        const beat = reduced ? 0.4 : Math.min(1, lub + dub);
+        /* Una vez descubierto, el faro se calma: ya ha hecho su trabajo. */
+        const calm = discovered ? 0.4 : 1;
+        const pulse = 0.72 + 0.28 * beat;
+
+        /* Ondas concéntricas: el «toca aquí» sin escribir «toca aquí». */
+        if (!discovered && !reduced) {
+          ctx.lineWidth = 1.4 * dpr;
+          for (const off of [0, 0.5]) {
+            const ph = (cyc + off) % 1;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, (9 + ph * 42) * dpr, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255,184,107,${0.42 * (1 - ph) * (1 - ph)})`;
+            ctx.stroke();
+          }
+        }
+
+        const R = (6.6 + beat * 3.6 * calm + (hoverStar ? 2 : 0) + star.burst * 10) * dpr;
         ctx.beginPath();
         ctx.arc(star.x, star.y, R, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(255,184,107,0.97)";
@@ -2541,7 +2566,7 @@ window.Store = (() => {
         // destellos en cruz
         ctx.strokeStyle = `rgba(255,220,170,${0.5 * pulse + star.burst * 0.5})`;
         ctx.lineWidth = 1.2 * dpr;
-        const L = (16 + star.burst * 26) * dpr;
+        const L = (16 + beat * 6 * calm + star.burst * 26) * dpr;
         ctx.beginPath();
         ctx.moveTo(star.x - L, star.y); ctx.lineTo(star.x + L, star.y);
         ctx.moveTo(star.x, star.y - L); ctx.lineTo(star.x, star.y + L);
@@ -2590,11 +2615,14 @@ window.Store = (() => {
     }
 
     canvas.addEventListener("mousemove", ev => {
-      canvas.style.cursor = nearStar(ev) ? "pointer" : "default";
+      hoverStar = nearStar(ev);
+      canvas.style.cursor = hoverStar ? "pointer" : "default";
     });
+    canvas.addEventListener("mouseleave", () => { hoverStar = false; });
 
     canvas.addEventListener("click", ev => {
       if (!nearStar(ev)) return;
+      discovered = true;
       star.burst = 1;
       shock = 1;
       AE.playSequence(AP.homeMelody(0, { resolve: true, beat: 0.34 }));
