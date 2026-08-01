@@ -1756,6 +1756,17 @@ window.Store = (() => {
       setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "start" }), 280);
     }
 
+    /* El puente de vuelta: el modo rápido termina con una puerta abierta
+       hacia el Acto I, no con un diploma y punto. */
+    function goViaje() {
+      closeFinalBanner();
+      exitFs();
+      const target = document.getElementById("acto-1");
+      if (!target) return;
+      /* Misma espera que goChuleta: dejar que la página recupere su tamaño. */
+      setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "start" }), 280);
+    }
+
     function showFinalBanner(silent) {
       const p = points();
       const [emoji, title, text] = rankFor(p);
@@ -1773,8 +1784,14 @@ window.Store = (() => {
           <button class="btn" id="tf-again" type="button">↺ Volver a jugar</button>
         </div>
         <p class="tf-hint" id="tf-hint">El diploma va a tu nombre: escríbelo para poder descargarlo.</p>
+        <div class="tf-bridge">
+          <strong>Ya dominas los tres gestos.</strong> ¿Quieres saber ahora <em>por qué</em> funcionan —
+          qué significa de verdad ese código, el reloj de 24 tonalidades, la máquina que a veces duda?<br>
+          <button class="btn btn-primary" id="tf-viaje" type="button">✦ Empezar el viaje completo</button>
+        </div>
         <button class="tf-back" id="tf-back" type="button">Seguir viendo el tutorial</button></div></div>`;
 
+      $("#tf-viaje").addEventListener("click", goViaje);
       $("#tf-again").addEventListener("click", resetGame);
       $("#tf-close").addEventListener("click", closeFinalBanner);
       $("#tf-back").addEventListener("click", goChuleta);
