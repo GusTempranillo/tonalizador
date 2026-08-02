@@ -1130,80 +1130,331 @@ window.Store = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     EXP 12 — Cabina de DJ (juego Camelot)
+     EXP 6 — Cabina de DJ (sesión encadenada sobre la rueda)
+     El disco marca la salida; cada fila se destapa al decidir
+     la anterior, construida sobre TU elección real: siempre hay
+     exactamente 2 opciones compatibles y 2 trampas por fila.
      ════════════════════════════════════════════════════════ */
 
   function initGame() {
-    const optsWrap = $("#game-options");
-    if (!optsWrap) return;
+    const rowsWrap = $("#dj-rows");
+    if (!rowsWrap) return;
+
     const camelotToKey = {};
     for (const [k, v] of Object.entries(T.CAMELOT_BY_KEY)) camelotToKey[v] = k;
-    let current = "8A", round = 1, score = 0;
-    const TOTAL = 5;
+    const ALL_CODES = Object.keys(camelotToKey);
+    const ROWS = 5, COLS = 4;
+
+    /* Las 10 «combinaciones» pregeneradas: disco de partida + semilla.
+       Misma semilla y mismas decisiones → exactamente el mismo tablero. */
+    const COMBOS = [
+      { disc: "8A", seed: 101 }, { disc: "5B", seed: 202 }, { disc: "12A", seed: 303 },
+      { disc: "3B", seed: 404 }, { disc: "10A", seed: 505 }, { disc: "7B", seed: 606 },
+      { disc: "1A", seed: 707 }, { disc: "9B", seed: 808 }, { disc: "4A", seed: 909 },
+      { disc: "11B", seed: 1010 },
+    ];
+
+    /* Generador aleatorio con semilla (mulberry32): reproducible. */
+    function rng(seed) {
+      let a = seed >>> 0;
+      return () => {
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function hashStr(s) {
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    }
+
+    const disc = $("#game-disc");
+    const chainBtn = $("#dj-play-chain");
+    const againBtn = $("#dj-again");
+    const feedback = $("#game-feedback");
+
+    let comboIdx = 0;
+    let selections = new Array(ROWS).fill(null); // código elegido en cada fila
+    let busy = false;                            // volteo o reproducción en curso
+    let evaluated = false;
 
     function pcModeOf(code) {
       const keyOf = camelotToKey[code];
       return { pc: T.PITCH_CLASSES.indexOf(keyOf.replace("m", "")), mode: keyOf.endsWith("m") ? 0 : 1, keyOf };
     }
+    const isCompatible = (a, b) => T.camelotNeighbors(a).includes(b);
+    const prevKeyOf = rowIdx => (rowIdx === 0 ? COMBOS[comboIdx].disc : selections[rowIdx - 1]);
 
-    function newRound() {
-      $("#game-disc").textContent = current;
-      const info = pcModeOf(current);
-      $("#game-disc").style.background = T.pitchColor(info.pc, 0.9);
-      $("#game-now-name").textContent = `Sonando: ${T.keyToSpanish(info.keyOf)}`;
-      $("#game-score").textContent = `Ronda ${round} de ${TOTAL} · Aciertos: ${score}`;
-      $("#game-feedback").textContent = "";
-      const good = T.camelotNeighbors(current)[Math.floor(Math.random() * 3)];
-      const all = Object.keys(camelotToKey);
-      const bads = [];
-      const banned = new Set([current, ...T.camelotNeighbors(current)]);
-      while (bads.length < 3) {
-        const c = all[Math.floor(Math.random() * all.length)];
-        if (!banned.has(c) && !bads.includes(c)) bads.push(c);
+    function playKey(code) {
+      const { pc, mode } = pcModeOf(code);
+      AE.playSequence(AP.progressionEvents(pc, mode, [0], { beat: 0.55 }));
+    }
+
+    /* Opciones de una fila: 2 vecinas de la elección anterior + 2 lejanas,
+       en columnas barajadas. Determinista por (combinación, fila, tonalidad previa). */
+    function buildRowOptions(rowIdx, prevCode) {
+      const rand = rng((Math.imul(COMBOS[comboIdx].seed, 2654435761) ^ Math.imul(rowIdx + 1, 40503) ^ hashStr(prevCode)) >>> 0);
+      const shuffle = arr => {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(rand() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      };
+      const good = shuffle(T.camelotNeighbors(prevCode).slice()).slice(0, 2);
+      const banned = new Set([prevCode, ...T.camelotNeighbors(prevCode)]);
+      const bad = [];
+      while (bad.length < 2) {
+        const c = ALL_CODES[Math.floor(rand() * ALL_CODES.length)];
+        if (!banned.has(c) && !bad.includes(c)) bad.push(c);
       }
-      const options = [...bads, good].sort(() => Math.random() - 0.5);
-      optsWrap.innerHTML = "";
-      options.forEach(code => {
-        const { pc, mode, keyOf } = pcModeOf(code);
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "game-opt";
-        b.innerHTML = `<div class="code" style="color:${T.pitchColor(pc)}">${code}</div><div class="nm">${T.keyToSpanish(keyOf)}</div>`;
-        b.addEventListener("click", () => answer(code, good, b));
-        optsWrap.appendChild(b);
+      return shuffle([...good, ...bad]);
+    }
+
+    /* ---------- Construcción del tablero (5 filas × 4 casillas) ---------- */
+
+    const cardEls = [];
+    for (let r = 0; r < ROWS; r++) {
+      const row = document.createElement("div");
+      row.className = "dj-row";
+      const tag = document.createElement("span");
+      tag.className = "dj-row-tag";
+      tag.textContent = String(r + 1);
+      tag.setAttribute("aria-hidden", "true");
+      const opts = document.createElement("div");
+      opts.className = "dj-row-opts";
+      row.appendChild(tag);
+      row.appendChild(opts);
+      rowsWrap.appendChild(row);
+      cardEls.push([]);
+      for (let cix = 0; cix < COLS; cix++) {
+        const card = document.createElement("div");
+        card.className = "dj-opt facedown";
+        card.innerHTML = `
+          <button class="dj-cell" type="button" disabled>
+            <span class="code"></span><span class="nm"></span>
+          </button>
+          <label class="dj-check">
+            <input type="checkbox" disabled>
+            <span class="dj-box" aria-hidden="true"></span>
+          </label>`;
+        const cell = card.querySelector(".dj-cell");
+        const input = card.querySelector("input");
+        cell.addEventListener("click", () => {
+          if (busy || card.classList.contains("facedown")) return;
+          playKey(card.dataset.code);
+        });
+        input.addEventListener("change", () => onCheck(r, cix, input.checked));
+        opts.appendChild(card);
+        cardEls[r].push(card);
+      }
+    }
+
+    function setCard(card, code) {
+      card.dataset.code = code;
+      const { pc, keyOf } = pcModeOf(code);
+      const nombre = T.keyToSpanish(keyOf);
+      const codeEl = card.querySelector(".code");
+      codeEl.textContent = code;
+      codeEl.style.color = T.pitchColor(pc);
+      card.querySelector(".nm").textContent = nombre;
+      card.querySelector(".dj-cell").setAttribute("aria-label", `Escuchar ${nombre} (${code})`);
+      card.querySelector("input").setAttribute("aria-label", `Elegir ${nombre} (${code})`);
+    }
+
+    /* Volteo tipo panel de aeropuerto: la casilla recorre códigos al azar antes de asentarse. */
+    function flapCard(card, finalCode, done) {
+      card.classList.remove("facedown");
+      card.classList.add("flipping");
+      const codeEl = card.querySelector(".code"), nmEl = card.querySelector(".nm");
+      let ticks = 7 + Math.floor(Math.random() * 4);
+      const iv = setInterval(() => {
+        const c = ALL_CODES[Math.floor(Math.random() * ALL_CODES.length)];
+        const info = pcModeOf(c);
+        codeEl.textContent = c;
+        codeEl.style.color = T.pitchColor(info.pc);
+        nmEl.textContent = T.keyToSpanish(info.keyOf);
+        if (--ticks <= 0) {
+          clearInterval(iv);
+          card.classList.remove("flipping");
+          setCard(card, finalCode);
+          if (done) done();
+        }
+      }, 70);
+    }
+
+    function hideRow(r) {
+      selections[r] = null;
+      cardEls[r].forEach(card => {
+        card.classList.remove("right", "wrong", "playing", "selected", "flipping");
+        card.querySelector("input").checked = false;
+        card.classList.add("facedown");
       });
     }
 
-    function answer(code, good, btn) {
-      const right = code === good;
-      $$(".game-opt").forEach(b => b.disabled = true);
-      btn.classList.add(right ? "right" : "wrong");
-      if (!right) {
-        $$(".game-opt").forEach(b => { if (b.querySelector(".code").textContent === good) b.classList.add("right"); });
+    function revealRow(r, { animate = true } = {}) {
+      const codes = buildRowOptions(r, prevKeyOf(r));
+      if (!animate) {
+        cardEls[r].forEach((card, i) => { card.classList.remove("facedown"); setCard(card, codes[i]); });
+        syncControls();
+        return;
       }
-      const cur = pcModeOf(current), next = pcModeOf(right ? code : good);
-      const ev = [
-        ...AP.progressionEvents(cur.pc, cur.mode, [0, 4], { beat: 0.55 }),
-        ...AP.progressionEvents(next.pc, next.mode, [0, 0], { beat: 0.55 }).map(e => ({ ...e, at: e.at + 1.2 })),
-      ];
-      AE.playSequence(ev);
-      if (right) score++;
-      $("#game-feedback").innerHTML = right
-        ? `✅ ¡Encaje perfecto! ${current} → ${code}: ${code.endsWith(current.slice(-1)) ? "número vecino, misma letra" : "mismo número, letra opuesta"} — comparten casi toda la familia de notas.`
-        : `❌ ${code} está lejos de ${current} en la rueda. La compatible era <strong>${good}</strong> (${T.keyToSpanish(pcModeOf(good).keyOf)}). Escucha cómo habría aterrizado.`;
-      setTimeout(() => {
-        if (round >= TOTAL) {
-          $("#game-score").textContent = `Fin · Aciertos: ${score} de ${TOTAL}`;
-          $("#game-feedback").innerHTML += `<br><strong>${score >= 4 ? "🏆 Oído de cabina profesional." : score >= 2 ? "🎛️ Buen comienzo: la rueda ya es tu aliada." : "🌀 Vuelve a la rueda del Acto II y prueba otra vez — está a un scroll."}</strong> <button class="btn" id="game-restart" type="button">↻ Jugar de nuevo</button>`;
-          $("#game-restart")?.addEventListener("click", () => { round = 1; score = 0; current = "8A"; newRound(); });
-        } else {
-          round++;
-          current = right ? code : good;
-          newRound();
-        }
-      }, 2600);
+      busy = true;
+      syncControls();
+      let pending = COLS;
+      cardEls[r].forEach((card, i) => {
+        setTimeout(() => flapCard(card, codes[i], () => {
+          if (--pending === 0) { busy = false; syncControls(); }
+        }), i * 90);
+      });
     }
-    newRound();
+
+    function clearEvaluation() {
+      if (!evaluated) return;
+      evaluated = false;
+      cardEls.forEach(cards => cards.forEach(card => card.classList.remove("right", "wrong", "playing")));
+      disc.classList.remove("playing");
+    }
+
+    function syncControls() {
+      chainBtn.disabled = busy || !selections.every(Boolean);
+      againBtn.disabled = busy;
+      disc.disabled = busy;
+      cardEls.forEach(cards => cards.forEach(card => {
+        const off = busy || card.classList.contains("facedown");
+        card.querySelector("input").disabled = off;
+        card.querySelector(".dj-cell").disabled = off;
+      }));
+    }
+
+    function onCheck(r, cix, checked) {
+      if (busy) return;
+      clearEvaluation();
+      const card = cardEls[r][cix];
+      if (checked) {
+        cardEls[r].forEach(c => {
+          if (c !== card) { c.querySelector("input").checked = false; c.classList.remove("selected"); }
+        });
+        card.classList.add("selected");
+        selections[r] = card.dataset.code;
+        for (let k = r + 1; k < ROWS; k++) hideRow(k);
+        playKey(card.dataset.code);
+        if (r + 1 < ROWS) revealRow(r + 1);
+        feedback.innerHTML = selections.every(Boolean)
+          ? "Cadena completa. Pulsa <strong>«Escuchar transiciones»</strong> para descubrir qué saltos respetan la rueda."
+          : `Fila ${r + 1}: eliges <strong>${card.dataset.code}</strong>. Se destapa la fila ${r + 2}, construida sobre tu elección.`;
+      } else {
+        card.classList.remove("selected");
+        selections[r] = null;
+        for (let k = r + 1; k < ROWS; k++) hideRow(k);
+        feedback.textContent = `Fila ${r + 1} sin elección: las filas siguientes vuelven a taparse.`;
+      }
+      syncControls();
+    }
+
+    /* ---------- Escuchar la cadena entera y evaluar en cascada ---------- */
+
+    function playChain() {
+      if (busy || !selections.every(Boolean)) return;
+      clearEvaluation();
+      evaluated = true;
+      busy = true;
+      syncControls();
+      const chain = [COMBOS[comboIdx].disc, ...selections];
+      const STEP = 1.05;
+      AE.playSequence(chain.map((code, i) => {
+        const { pc, mode } = pcModeOf(code);
+        const ev = AP.progressionEvents(pc, mode, [0], { beat: 0.55 })[0];
+        return { ...ev, at: i * STEP, dur: 1.4 };
+      }));
+      const selCards = selections.map((code, r) => cardEls[r].find(c => c.dataset.code === code));
+      let hits = 0;
+      chain.forEach((code, i) => {
+        setTimeout(() => {
+          if (i === 0) {
+            disc.classList.add("playing");
+            setTimeout(() => disc.classList.remove("playing"), STEP * 900);
+            return;
+          }
+          const ok = isCompatible(chain[i - 1], chain[i]);
+          if (ok) hits++;
+          const card = selCards[i - 1];
+          if (!card) return;
+          card.classList.add(ok ? "right" : "wrong", "playing");
+          setTimeout(() => card.classList.remove("playing"), STEP * 900);
+        }, i * STEP * 1000);
+      });
+      setTimeout(() => {
+        busy = false;
+        feedback.innerHTML = resultMessage(hits);
+        syncControls();
+      }, ((chain.length - 1) * STEP + 1.35) * 1000);
+    }
+
+    function resultMessage(hits) {
+      const base = `<strong>${hits} de 5</strong> transiciones respetan la rueda. `;
+      if (hits === 5) return "🏆 " + base + "Sesión redonda: oído de cabina profesional. ¿Otra combinación?";
+      if (hits >= 3) return "🎛️ " + base + "Fíjate en los recuadros rojos: cambia esas casillas y vuelve a escuchar.";
+      if (hits >= 1) return "🌀 " + base + "Recuerda la regla: mismo número con la otra letra, o número de al lado con la misma letra.";
+      return "😅 " + base + "Todas las trampas a la primera — ¡mérito tiene! La rueda de arriba te chiva las vecinas de cada casilla.";
+    }
+
+    /* ---------- Disco y combinaciones ---------- */
+
+    function setDisc(code) {
+      const { pc, keyOf } = pcModeOf(code);
+      disc.textContent = code;
+      disc.style.background = T.pitchColor(pc, 0.9);
+      disc.title = `Escuchar ${T.keyToSpanish(keyOf)} (${code})`;
+      $("#game-now-name").textContent = `Sonando: ${T.keyToSpanish(keyOf)}`;
+    }
+
+    function flapDisc(finalCode, done) {
+      disc.classList.add("flipping");
+      let ticks = 9;
+      const iv = setInterval(() => {
+        const c = ALL_CODES[Math.floor(Math.random() * ALL_CODES.length)];
+        disc.textContent = c;
+        disc.style.background = T.pitchColor(pcModeOf(c).pc, 0.9);
+        if (--ticks <= 0) {
+          clearInterval(iv);
+          disc.classList.remove("flipping");
+          setDisc(finalCode);
+          if (done) done();
+        }
+      }, 70);
+    }
+
+    function newBoard({ animate }) {
+      AE.stopAll();
+      evaluated = false;
+      $("#game-score").textContent = `Combinación ${comboIdx + 1} de ${COMBOS.length}`;
+      for (let r = 0; r < ROWS; r++) hideRow(r);
+      feedback.innerHTML = "Escucha el disco y las cuatro opciones de la fila 1; marca una casilla para destapar la fila 2.";
+      if (animate) {
+        busy = true;
+        syncControls();
+        flapDisc(COMBOS[comboIdx].disc, () => {
+          busy = false;
+          revealRow(0, { animate: true });
+        });
+      } else {
+        setDisc(COMBOS[comboIdx].disc);
+        revealRow(0, { animate: false });
+      }
+    }
+
+    disc.addEventListener("click", () => { if (!busy) playKey(COMBOS[comboIdx].disc); });
+    chainBtn.addEventListener("click", playChain);
+    againBtn.addEventListener("click", () => {
+      if (busy) return;
+      comboIdx = (comboIdx + 1) % COMBOS.length;
+      newBoard({ animate: true });
+    });
+
+    newBoard({ animate: false });
   }
 
   /* ════════════════════════════════════════════════════════
@@ -1560,11 +1811,11 @@ window.Store = (() => {
       },
       {
         img: "img/app-07-audio.webp", title: "El laboratorio local, en producción",
-        intro: "Le dimos un archivo de audio de verdad. Este es el veredicto del análisis que practicaste en el Experimento 8 — con su duda medida y confesada.",
+        intro: "Le dimos un archivo de audio de verdad. Este es el veredicto del análisis que practicaste en el Experimento 9 — con su duda medida y confesada.",
         hotspots: [
           { x: 28, y: 23, t: "«Conviene comprobar el resultado»", d: "La app no vende certezas: «el cálculo no ha sido suficientemente claro. Puedes probar con otro archivo o corregir la tonalidad manualmente.»" },
           { x: 30, y: 38, t: "«Tu MP3 no sale del dispositivo»", d: "«Se decodifica y analiza únicamente en este navegador; no se sube ni se conserva.» La promesa del laboratorio, cumplida en producción." },
-          { x: 83.6, y: 46.3, t: "El veredicto", d: "Do Mayor · C · Camelot 8B — obtenido pesando las 12 notas del archivo y comparando con los 24 patrones, exactamente como en el Experimento 8." },
+          { x: 83.6, y: 46.3, t: "El veredicto", d: "Do Mayor · C · Camelot 8B — obtenido pesando las 12 notas del archivo y comparando con los 24 patrones, exactamente como en el Experimento 9." },
           { x: 24, y: 52.3, t: "«Confirma esta» · Confianza tonal 81 %", d: "El resultado llega con su confianza medida y una etiqueta prudente. La última palabra es tuya — nunca de la máquina." },
           { x: 35, y: 59.6, t: "El método, al desnudo", d: "Perfil cromático local (local_hpcp_v2_full) · 24 s analizados · canción completa en 5 tramos… y el voto de cada tramo, discrepancias incluidas: el tramo 5–10 s votó La menor (75 %)." },
           { x: 73, y: 54, t: "«Analizar otro archivo»", d: "¿Tienes una versión mejor grabada de la misma canción? Repite el análisis con otro archivo cuando quieras." },

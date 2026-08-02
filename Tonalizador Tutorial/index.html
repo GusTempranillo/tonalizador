@@ -26,8 +26,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<!-- GSAP 3.12.5 servido desde esta misma carpeta (js/vendor): el tutorial no
+     depende de ningún CDN externo para animarse y funciona sin conexión. -->
+<script src="js/vendor/gsap.min.js"></script>
+<script src="js/vendor/ScrollTrigger.min.js"></script>
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/utilities.css">
 </head>
@@ -75,7 +77,7 @@
         <a class="btn btn-primary" href="#empezar">Empezar ↓</a>
         <button class="btn" id="hero-listen" type="button">🔊 Escuchar una tonalidad</button>
       </div>
-      <p class="hero-note">Sin instalar nada · El sonido se genera en tu navegador · 17 experimentos interactivos</p>
+      <p class="hero-note">Sin instalar nada · El sonido se genera en tu navegador · 15 experimentos interactivos</p>
     </div>
     <div class="hero-viz">
       <canvas id="hero-canvas" aria-hidden="true"></canvas>
@@ -380,6 +382,29 @@
     en la notación internacional y en el reloj de los DJ.</p>
   </div>
 
+  <div class="panel reveal">
+    <p class="panel-title">Experimento 6 · Cabina de DJ</p>
+    <p class="panel-hint" style="margin:0 0 6px">El disco de arriba ya está girando. Construye una sesión de
+    <strong>cinco transiciones</strong>: toca el disco o cualquier recuadro para <em>escuchar</em> su tonalidad,
+    y marca con la casilla tu elección en cada fila. Cada fila se destapa al decidir la anterior — como en una
+    cabina de verdad: nunca eliges el cuarto disco sin saber cuál será el tercero.</p>
+    <p class="panel-hint" style="margin:0 0 18px">En cada fila hay <strong>dos opciones que respetan la rueda</strong>
+    respecto a tu elección anterior… y dos trampas. Nadie te dirá cuál es cuál hasta que pulses «Escuchar transiciones».</p>
+    <div class="game-now">
+      <button class="now-disc dj-disc" id="game-disc" type="button" title="Escuchar la tonalidad del disco">8A</button>
+      <div>
+        <div style="font-weight:700" id="game-now-name">Sonando: La menor</div>
+        <div class="panel-hint" style="margin:2px 0 0" id="game-score">Combinación 1 de 10</div>
+      </div>
+    </div>
+    <div class="dj-rows" id="dj-rows"></div>
+    <div class="btn-row" style="margin-top:18px">
+      <button class="btn btn-primary" id="dj-play-chain" type="button" disabled>▶ Escuchar transiciones</button>
+      <button class="btn" id="dj-again" type="button">↻ Jugar otra vez</button>
+    </div>
+    <div class="game-feedback" id="game-feedback" aria-live="polite"></div>
+  </div>
+
   <div class="ponder reveal">
     <span class="tag">Para seguir pensando</span>
     <p>La rueda no la inventó la naturaleza: la inventaron personas buscando una forma de <em>ver</em> un parentesco
@@ -411,7 +436,7 @@
   </div>
 
   <div class="panel reveal">
-    <p class="panel-title">Experimento 6 · Sigue el viaje de una canción</p>
+    <p class="panel-title">Experimento 7 · Sigue el viaje de una canción</p>
     <p class="panel-hint" style="margin:0 0 18px">Elige una canción (son los casos reales con los que se probó la
     herramienta en producción) y observa cómo recorre la cadena. Prueba la misma canción dos veces: la segunda vez
     la memoria responderá al instante.</p>
@@ -474,7 +499,7 @@
   </div>
 
   <div class="panel reveal">
-    <p class="panel-title">Experimento 7 · Tú eres el algoritmo</p>
+    <p class="panel-title">Experimento 8 · Tú eres el algoritmo</p>
     <p class="panel-hint" style="margin:0 0 18px">Tu playlist dice una cosa; el catálogo ofrece candidatas.
     ¿Dejarías pasar cada caso automáticamente, o lo mandarías a revisión? Decide y compara con las reglas reales
     de la herramienta.</p>
@@ -520,7 +545,7 @@
   </div>
 
   <div class="panel reveal">
-    <p class="panel-title">Experimento 8 · El laboratorio en vivo</p>
+    <p class="panel-title">Experimento 9 · El laboratorio en vivo</p>
     <p class="panel-hint" style="margin:0 0 14px">Elige una «canción» sintetizada y mira el algoritmo trabajar por
     dentro, paso a paso, con sonido real generado en tu navegador. (Es una simulación didáctica fiel del método
     <span class="mono">local_hpcp_v2</span> de la herramienta: mismos perfiles tonales, misma fórmula de confianza.)</p>
@@ -586,7 +611,7 @@
   </div>
 
   <div class="panel reveal">
-    <p class="panel-title">Experimento 9 · Explora la ficha</p>
+    <p class="panel-title">Experimento 10 · Explora la ficha</p>
     <p class="panel-hint" style="margin:0 0 18px">Esta es una ficha real de las pruebas en producción.
     Toca cada campo para descubrir qué significa y por qué existe.</p>
     <div class="anatomy">
@@ -633,7 +658,7 @@
   </div>
 
   <div class="panel reveal">
-    <p class="panel-title">Experimento 10 · Las primas hermanas</p>
+    <p class="panel-title">Experimento 11 · Las primas hermanas</p>
     <p class="panel-hint" style="margin:0 0 18px">Dos progresiones con las mismas siete notas de familia.
     Escúchalas: una siente su hogar en Do (luminosa), la otra en La (melancólica). Debajo, sus perfiles de notas:
     casi gemelos. Por eso el algoritmo mide la <em>ventaja sobre la segunda candidata</em> — y cuando es escasa,
@@ -665,7 +690,7 @@
   </div>
 
   <div class="panel reveal">
-    <p class="panel-title">Experimento 11 · Una canción que se muda de casa</p>
+    <p class="panel-title">Experimento 12 · Una canción que se muda de casa</p>
     <p class="panel-hint" style="margin:0 0 14px">Abajo tienes <strong>una canción entera</strong>, del primer segundo
     al último, estirada como una tira de tiempo. Cada bloque es un tramo de la canción, y su color te dice
     <strong>en qué tonalidad suena ese tramo</strong>. Es una versión simplificada de <em>Bohemian Rhapsody</em>.
@@ -708,7 +733,7 @@
   </div>
 
   <div class="panel reveal">
-    <p class="panel-title">Experimento 12 · La sesión imposible</p>
+    <p class="panel-title">Experimento 13 · La sesión imposible</p>
     <p class="panel-hint" style="margin:0 0 18px">Pon una canción en el plato. Debajo aparecerá qué otras encajan con
     ella según la regla de la rueda — y podrás escuchar cada transición para comprobarlo con el oído, no con la teoría.</p>
     <div class="famous-grid" id="famous-grid"></div>
@@ -726,7 +751,7 @@
   </div>
 
   <div class="panel reveal">
-    <p class="panel-title">Experimento 13 · El truco de los cuatro acordes</p>
+    <p class="panel-title">Experimento 14 · El truco de los cuatro acordes</p>
     <p class="panel-hint" style="margin:0 0 18px">Existe una secuencia de cuatro acordes que sostiene centenares de
     canciones populares. Escúchala aquí y después múdala de casa: comprobarás que la sensación no depende de la
     tonalidad elegida, sino de <em>las distancias entre sus acordes</em> — la misma receta del capítulo 4.</p>
@@ -820,7 +845,7 @@
           <strong>confianza tonal del 81 %</strong> y la etiqueta prudente «Confirma esta». Debajo, el método al
           desnudo — perfil cromático local, 24 segundos analizados, canción completa en 5 tramos — y el voto de cada
           tramo: 0–5 s Do Mayor (86 %), 5–10 s <em>La menor</em> (75 %), 10–14 s Sol Mayor (56 %)… Exactamente lo que
-          practicaste en el Experimento 8: tramos que discrepan, confianza medida, y la duda dicha en voz alta.</figcaption>
+          practicaste en el Experimento 9: tramos que discrepan, confianza medida, y la duda dicha en voz alta.</figcaption>
         </figure>
 <figure class="shot">
           <img src="img/app-08-descargar.webp" alt="Pantalla Descargar: 80 % ordenado, listas por tonalidad y botón Descargar todas las listas" loading="lazy">
@@ -924,23 +949,10 @@
   <div class="apps-grid reveal">
     <div class="app-card"><div class="emoji">🎧</div><h4>Playlists que fluyen</h4><p>Ordena las canciones para que cada una encaje con la siguiente y la lista suene como un todo, sin saltos bruscos.</p><span class="who">Cualquier persona</span></div>
     <div class="app-card"><div class="emoji">🎤</div><h4>Cantar o tocar encima</h4><p>Saber el tono te dice si una canción te vendrá cómoda o se te irá demasiado aguda o grave — antes de empezar.</p><span class="who">Músicos y estudiantes</span></div>
-    <div class="app-card"><div class="emoji">🎚️</div><h4>Mezcla armónica</h4><p>Encadena códigos Camelot vecinos, como los DJ profesionales, para sesiones y fiestas sin choques.</p><span class="who">DJ y aficionados</span></div>
+    <div class="app-card"><div class="emoji">🎚️</div><h4>Mezcla armónica</h4><p>Encadena códigos Camelot vecinos, como hiciste en la cabina de DJ del Experimento 6, para sesiones y fiestas sin choques.</p><span class="who">DJ y aficionados</span></div>
     <div class="app-card"><div class="emoji">🧘</div><h4>Ambientes coherentes</h4><p>Listas para estudiar, yoga o cenas donde el clima (Mayor/menor) y el pulso (BPM) se mantienen estables.</p><span class="who">Espacios y rutinas</span></div>
     <div class="app-card"><div class="emoji">🏫</div><h4>Enseñar teoría con datos reales</h4><p>Las canciones favoritas del alumnado, convertidas en ejemplos vivos de tonalidad, modo y parentesco armónico.</p><span class="who">Docentes</span></div>
     <div class="app-card"><div class="emoji">🔍</div><h4>Curiosidad pura</h4><p>Descubrir en qué tono está esa canción que te obsesiona — incluso desde un MP3 guardado en un cajón digital.</p><span class="who">Mentes inquietas</span></div>
-  </div>
-
-  <div class="panel reveal">
-    <p class="panel-title">Experimento 14 · Cabina de DJ</p>
-    <p class="panel-hint" style="margin:0 0 16px">Está sonando la canción del disco. Elige la siguiente:
-    solo una de las opciones respeta la regla de la rueda. Puedes escuchar la transición antes de decidir.
-    Cinco rondas — ¿cuántas encadenas?</p>
-    <div class="game-now">
-      <div class="now-disc" id="game-disc">8A</div>
-      <div><div style="font-weight:700" id="game-now-name">Sonando: La menor</div><div class="panel-hint" style="margin:2px 0 0" id="game-score">Ronda 1 de 5 · Aciertos: 0</div></div>
-    </div>
-    <div class="game-options" id="game-options"></div>
-    <div class="game-feedback" id="game-feedback" aria-live="polite"></div>
   </div>
 
   <div class="ponder reveal">

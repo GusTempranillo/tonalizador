@@ -2005,24 +2005,98 @@ html.io .reveal.is-visible { opacity: 1; transform: none; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.game-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.game-feedback { margin-top: 14px; font-size: 14.5px; color: var(--text-dim); min-height: 24px; }
 
-.game-opt {
+/* --------------------------------------------------------------------------
+   Cabina de DJ · sesión encadenada (Experimento 6)
+   -------------------------------------------------------------------------- */
+
+.dj-disc { cursor: pointer; padding: 0; font-family: inherit; }
+.dj-disc:hover { filter: brightness(1.12); }
+.dj-disc:disabled { cursor: default; }
+.dj-disc.playing, .dj-opt.playing { box-shadow: 0 0 0 4px rgba(139, 124, 255, 0.4); }
+
+.dj-rows { display: grid; gap: 10px; margin-top: 6px; }
+.dj-row { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: stretch; }
+.dj-row-tag { display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--text-faint); }
+.dj-row-opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+.dj-opt {
+  position: relative;
+  display: flex;
+  align-items: stretch;
   border: 1px solid var(--line-strong);
   background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-sm);
-  padding: 14px;
-  color: var(--text);
-  text-align: left;
-  transition: all 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
-.game-opt:hover { border-color: var(--acc); background: rgba(139, 124, 255, 0.08); }
-.game-opt .code { font-weight: 800; font-size: 17px; }
-.game-opt .nm { font-size: 13px; color: var(--text-dim); }
-.game-opt.right { border-color: var(--ok); background: rgba(74, 222, 128, 0.1); }
-.game-opt.wrong { border-color: var(--bad); background: rgba(248, 113, 113, 0.1); }
+.dj-opt:hover { border-color: var(--acc); background: rgba(139, 124, 255, 0.08); }
+.dj-cell {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--text);
+  padding: 10px 8px 10px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.dj-cell:disabled { cursor: default; }
+.dj-cell .code { display: block; font-weight: 800; font-size: 16px; }
+.dj-cell .nm { display: block; font-size: 12px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.game-feedback { margin-top: 14px; font-size: 14.5px; color: var(--text-dim); min-height: 24px; }
+.dj-check {
+  display: grid;
+  place-items: center;
+  padding: 0 9px;
+  cursor: pointer;
+  border-left: 1px dashed var(--line-strong);
+}
+.dj-check input { position: absolute; opacity: 0; pointer-events: none; }
+.dj-box {
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  border: 2px solid var(--line-strong);
+  display: grid; place-items: center;
+  font-size: 12px; line-height: 1;
+  color: #0b0c16;
+  transition: all 0.15s;
+}
+.dj-check:hover .dj-box { border-color: var(--acc); }
+.dj-check input:checked + .dj-box { background: var(--acc); border-color: var(--acc); }
+.dj-check input:checked + .dj-box::after { content: "✓"; font-weight: 900; }
+.dj-check input:focus-visible + .dj-box { outline: 2px solid var(--acc); outline-offset: 2px; }
+.dj-check input:disabled + .dj-box { opacity: 0.45; }
+.dj-opt.selected { border-color: var(--acc); background: rgba(139, 124, 255, 0.12); }
+
+/* Boca abajo: la casilla aún no se ha destapado */
+.dj-opt.facedown {
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0 8px, rgba(255, 255, 255, 0.05) 8px 16px);
+}
+.dj-opt.facedown::before {
+  content: "?";
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 18px;
+  color: var(--text-faint);
+}
+.dj-opt.facedown .dj-cell,
+.dj-opt.facedown .dj-check { visibility: hidden; }
+
+/* Volteo tipo panel de aeropuerto */
+@keyframes dj-flap { 0% { transform: scaleY(1); } 50% { transform: scaleY(0.68); } 100% { transform: scaleY(1); } }
+.dj-opt.flipping { animation: dj-flap 0.14s linear infinite; }
+.dj-opt.flipping .dj-check { visibility: hidden; }
+.dj-disc.flipping { animation: spin 9s linear infinite, dj-flap 0.14s linear infinite; }
+
+.dj-opt.right { border-color: var(--ok); background: rgba(74, 222, 128, 0.12); }
+.dj-opt.wrong { border-color: var(--bad); background: rgba(248, 113, 113, 0.12); }
+
+@media (max-width: 680px) {
+  .dj-row { grid-template-columns: 18px 1fr; gap: 8px; }
+  .dj-row-opts { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+}
 
 .quiz-q { margin-bottom: 8px; font-weight: 650; font-size: 16.5px; }
 .quiz-opts { display: grid; gap: 9px; margin-bottom: 14px; }
