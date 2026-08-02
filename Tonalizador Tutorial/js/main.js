@@ -405,6 +405,19 @@
     addEventListener("keydown", unlock, true);
   }
 
+  /* ---------- Silencio al cruzar una puerta ----------
+     Las dos puertas de la bifurcación solo navegan: cualquier sonido
+     en curso (p. ej. la tonalidad del hero) se corta para que entrar
+     en el contenido nunca vaya acompañado de música.
+     («Empezar ↓» es distinto: dispara la tonalidad al llegar a la
+     bifurcación — ver initHero en chapters.js.) */
+
+  function initQuietNav() {
+    $$(".door").forEach(a => {
+      a.addEventListener("click", () => window.AudioEngine?.stopAll?.());
+    });
+  }
+
   /* ---------- Arranque ---------- */
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -416,6 +429,7 @@
     initReveals();
     initGsap();
     initAudioUnlock();
+    initQuietNav();
     window.Chapters?.init();
   });
 })();

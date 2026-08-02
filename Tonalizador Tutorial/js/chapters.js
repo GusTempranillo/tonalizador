@@ -196,11 +196,28 @@ window.Store = (() => {
     draw();
     if (reduced) { t = 40; draw(); }
 
-    $("#hero-listen")?.addEventListener("click", () => {
+    function playTonality() {
       const ev = AP.progressionEvents(0, 1, [0, 3, 4, 0], { beat: 0.72 });
       AE.playSequence(ev, {
         onStep: e => { (e.triad || []).forEach(m => { pulse[m % 12] = 1; }); pulse[0] = 1; },
       });
+    }
+
+    $("#hero-listen")?.addEventListener("click", playTonality);
+
+    /* «Empezar ↓»: la tonalidad acompaña la llegada a la bifurcación.
+       Se espera al final del desplazamiento suave (scrollend) y, si el
+       navegador no emite ese evento, un temporizador hace de red. */
+    $('.hero a[href="#empezar"]')?.addEventListener("click", () => {
+      let done = false;
+      const fire = () => {
+        if (done) return;
+        done = true;
+        removeEventListener("scrollend", fire);
+        playTonality();
+      };
+      addEventListener("scrollend", fire, { once: true });
+      setTimeout(fire, 900);
     });
   }
 
